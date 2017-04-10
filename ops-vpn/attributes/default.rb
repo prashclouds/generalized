@@ -1,5 +1,5 @@
 # openssl passwd -1 'mypasswod here'
-default['openvpn']['password'] = 'pass'
+default['openvpn']['password'] = 'ppass'
 default['vpn']['slack']['url'] = ''
 # Change bucket names
 default['vpn']['backup'] = 'bucket-backups/openvpn'

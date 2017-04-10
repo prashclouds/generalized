@@ -24,15 +24,9 @@ service 'openvpnas' do
    action [:enable, :start]
 end
 
-if !::File.exists?('/usr/local/openvpn_as/.openvpn-modified')
-  user 'openvpn' do
-    action :modify
-    password node['openvpn']['password']
-  end
-end
-
-file '/usr/local/openvpn_as/.openvpn-modified' do
-  content 'modified'
+user 'openvpn' do
+  action :modify
+  password node['openvpn']['password']
 end
 
 include_recipe "#{cookbook_name}::alert"
