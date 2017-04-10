@@ -5,7 +5,7 @@
 # Copyright (c) 2016 The Authors, All Rights Reserved.
 apt_repository 'juju' do
   uri 'https://apt.dockerproject.org/repo'
-  components main
+  components ['main']
   distribution 'ubuntu-trusty'
   key '58118E89F3A912897C070ADBF76221572C52609D'
   keyserver 'hkp://p80.pool.sks-keyservers.net:80'
