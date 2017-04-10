@@ -1,0 +1,19 @@
+description "Caddy Server startup script"
+author "Vinh"
+
+start on runlevel [2345]
+stop on runlevel [016]
+
+
+setuid <%=node['caddy']['user']%>
+setgid <%=node['caddy']['group']%>
+
+respawn
+respawn limit 10 5
+
+limit nofile 4096 4096
+
+script
+    export HOME=/etc/caddy
+    exec /usr/local/bin/caddy -conf=/etc/caddy/Caddyfile -agree=true
+end script

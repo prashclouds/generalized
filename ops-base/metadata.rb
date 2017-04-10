@@ -1,0 +1,13 @@
+name 'ops-base'
+maintainer 'The Authors'
+maintainer_email 'you@example.com'
+license 'all_rights'
+description 'Installs/Configures ops-base'
+long_description 'Installs/Configures ops-base'
+version '0.1.0'
+
+depends 'ops-clamav'
+depends 'ops-icinga2'
+depends 'ops-snapshot'
+depends 'ntp'
+depends 'datadog'

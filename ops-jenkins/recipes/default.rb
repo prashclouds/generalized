@@ -5,7 +5,7 @@
 # Copyright (c) 2016 The Authors, All Rights Reserved.
 include_recipe 'ops-caddy::default'
 include_recipe 'java::oracle'
-include_recipe "ops-base"
+#include_recipe "ops-base"
 include_recipe 'jenkins::master'
 include_recipe 'awscli'
 
