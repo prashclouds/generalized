@@ -11,23 +11,7 @@ include_recipe 'awscli'
 
 package 'jq'
 
-jenkins_plugin 'git' do
-  #notifies :restart, 'service[jenkins]', :immediately
-  action :install
-  ignore_failure true
-end
-
-jenkins_plugin 'git-client'  do
-  #notifies :restart, 'service[jenkins]', :immediately
-  action :install
-  ignore_failure true
-end
-
-jenkins_plugin 'slack' do
-  #notifies :restart, 'service[jenkins]', :immediately
-  action :install
-  ignore_failure true
-end
+include_recipe "#{cookbook_name}::plugins"
 
 directory '/var/lib/jenkins/.ssh' do
   owner "jenkins"
