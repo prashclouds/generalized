@@ -75,8 +75,8 @@ cookbook_file '/usr/local/bin/easy_deploy.py' do
   mode '0644'
 end
 
-group 'docker' do
-  action :modify
-  members 'jenkins'
-  append true
-end
+#group 'docker' do
+#  action :modify
+#  members 'jenkins'
+#  append true
+#end
