@@ -42,7 +42,7 @@ default['icinga2']['slack_webhook']['channel'] = ""
 
 default['icinga2']['pagerdury']['service_key']['nclouds'] = "9e5f3b04f1d643cbb7858e56f17cd852"
 
-default['icinga2']['user']['admin']['email'] = "root@localhost"
+#default['icinga2']['user']['admin']['email'] = "root@localhost"
 
 default['pingdom']['email'] = ""
 default['pingdom']['pass'] = ""
