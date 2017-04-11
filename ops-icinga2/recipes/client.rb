@@ -7,13 +7,6 @@
 include_recipe 'python'
 include_recipe 'nrpe'
 
-#package 'nagios-plugins-perl'
-#package 'perl-Sys-Statistics-Linux'
-#package 'nagios-plugins-http'
-#package 'perl-Nagios-Plugin'
-#package 'perl-LWP-Protocol-https'
-#package 'perl-JSON'
-
 case node['platform_family']
 when 'rhel'
   # do things on RHEL platforms (redhat, centos, scientific, etc)
@@ -25,7 +18,7 @@ when 'rhel'
   nagios_nrpe_plugin = "nagios-plugins-nrpe"
   nagios_nrpe_plugin_options = ''
   packages = %w{ nagios-plugins-perl nagios-plugins nagios-plugins-all perl-JSON perl-Sys-Statistics-Linux perl-LWP-Protocol-https }
-  
+
 else
   # do things on debian-ish platforms (debian, ubuntu, linuxmint)
   nagios_nrpe_plugin = "nagios-nrpe-plugin"
@@ -37,7 +30,14 @@ packages.each do |pkg|
  package pkg
 end
 
+
+
+#####################################################
+####### HERE START THE INSTALLATIONS OF THE PLUGINS
+#####################################################
+
 python_pip 'nagioscheck'
+
 python_pip 'nagios-plugin-elasticsearch'
 
 directory "#{node['nrpe']['plugin_dir']}/nagios-plugins-rabbitmq" do
@@ -104,7 +104,7 @@ cookbook_file "#{node['nrpe']['plugin_dir']}/nagios-plugins-rabbitmq/check_rabbi
 end
 
 cookbook_file "#{node['nrpe']['plugin_dir']}/nagios-plugins-rabbitmq/check_rabbitmq_shovels" do
-  source "nagios-plugins-rabbitmq/check_rabbitmq_shovels"  
+  source "nagios-plugins-rabbitmq/check_rabbitmq_shovels"
   owner 'root'
   group 'root'
   mode 0755
@@ -112,7 +112,7 @@ cookbook_file "#{node['nrpe']['plugin_dir']}/nagios-plugins-rabbitmq/check_rabbi
 end
 
 cookbook_file "#{node['nrpe']['plugin_dir']}/nagios-plugins-rabbitmq/check_rabbitmq_watermark" do
-  source "nagios-plugins-rabbitmq/check_rabbitmq_watermark"  
+  source "nagios-plugins-rabbitmq/check_rabbitmq_watermark"
   owner 'root'
   group 'root'
   mode 0755
@@ -162,6 +162,11 @@ cookbook_file "#{node['nrpe']['plugin_dir']}/check_apache.pl" do
  mode 0755
  action :create
 end
+
+
+#####################################################
+####### HERE START THE CONFIGURATION FOR NRPE CHECKS
+#####################################################
 
 template "#{node['nrpe']['plugin_dir']}/check_linux_stats.pl" do
  source "check_linux_stats.pl.erb"

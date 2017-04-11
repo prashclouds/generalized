@@ -35,14 +35,16 @@ default['icinga2']['slack']['token'] = ""
 
 default['icinga2']['slack_webhook']['url'] = ""
 default['icinga2']['slack_webhook']['channel'] = ""
+default['icina2']['user']['admin']['email'] = "root@localhost"
 
 #default['icinga2']['pagerdury']['service_key']['nclouds'] = node[:deploy]['WellpassApp'][:environment_variables]['PAGERDUTY_SERVICEKEY_NCLOUDS']
 #default['icinga2']['pagerdury']['service_key']['wellpass'] = node[:deploy]['WellpassApp'][:environment_variables]['PAGERDUTY_SERVICEKEY_WELLPASS']
 
+###########################################################
+#You can add here more attributes to monitor other services
+###########################################################
 
 default['icinga2']['pagerdury']['service_key']['nclouds'] = "9e5f3b04f1d643cbb7858e56f17cd852"
-
-default['icina2']['user']['admin']['email'] = "root@localhost"
 
 default['pingdom']['email'] = ""
 default['pingdom']['pass'] = ""

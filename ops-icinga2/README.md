@@ -1,5 +1,7 @@
 # icinga2
 
+To install an icinga2 server you need to run the ops-icinga2::default recipe.
+
 ## Cookbook Dependencies
 
 - yum version 3.13.0
@@ -18,14 +20,6 @@ https://supermarket.chef.io/cookbooks/nrpe/versions/1.5.3
 You can see the official documentation here
 https://supermarket.chef.io/cookbooks/python/versions/1.4.6
 
-- ops-base
-Cookbook that install some packages and plugins that will be useful.
-
-- ops-rabbitmq'
-Install a configure a rabbitmq server
-
-- ops-route53_autoupdate
-Attach the new machine to the DNS.
 
 
 Those dependencies are add on the Berksfile parent for the download and on the ops-icinga2/metadata.rb file.
@@ -35,47 +29,21 @@ Those dependencies are add on the Berksfile parent for the download and on the o
 We use this recipe to call the others.
 
 ```
-include_recipe "ops-base"
 include_recipe "icinga2::client"
 include_recipe "icinga2::install"
 include_recipe "icinga2::config"
-include_recipe "ops-route53_autoupdate"
 ```
 
-Ops-base is a cookbook that install some packages and plugins that will be useful. Ops-route53_autoupdate update the DNS for each instance.
 
 ## ops-icinga2::client
 
-In this recipe we use two dependencies, python and nrpe. Depends on the kind of platform that we are running (rhel or debian) we install different packages for each one.
+This recipe is used to install all the plugins using nagios. The plugins are in the files/default directory, in this cookbook you will can see rabbitmq plugins and pingdom, rds, redis and nginx check scripts. So you can use them like a example or you can remove them if you want. So If you want to monitor another service, you can add the plugin under files/default folder and include it in the client recipe.
 
-The recipe use the pip instruction to install nagios and the follows instructions are copy the files on COOKBOOK_NAME/files/default/nagios-plugins-rabbitmq/ to our instance, those files are:
-
-- check_rabbitmq_aliveness
-- check_rabbitmq_connections
-- check_rabbitmq_objects
-- check_rabbitmq_overview
-- check_rabbitmq_partition
-- check_rabbitmq_queue
-- check_rabbitmq_server
-- check_rabbitmq_shovels
-- check_rabbitmq_watermark
-
-Those files are using to configure plugins to connect Nagios and Rabbitmq. Next, the recipe copy other files on COOKBOOK_NAME/files/default/check-scripts/ to our recipe.
-
-- check_nginx_status.pl
-- check_redis.py
-- check_redis_key
-- pingdom
-- rds
-- redis_key
-
-This scripts are using for monitoring. They have instructions like calls to pingdom service to tracks the uptime, downtime, and performance of the website or instructions that capture some metrics of our instances. Next we have another script that we copy to our instance to monitoring Apache
-
-The nrpe check instructions, through the value parameters, set and add new actions that will be launched depending on the values in attributes/default.rd file
+Also in this recipe we configure the monitors using by nrpe, something like cpu, load, memory, disk or if a process is alive or not. So you can add or remove some nrpe_checks if you want. Some metric values using here were defined like variables in the attributes file.
 
 ## ops-icinga2::install
 
-This recipe install and configure Icinga2. Depends on the kind of platform that we are running (rhel or debian) we update diferents repositories for each one, then the recipe install all the packages.
+The install recipe creates the configuration files for each plugin installed in the client recipe. The dynamic values for this configurations are currently in the attributes file, you can remove it or add another ones.
 
 The next templates are using to configure the Icinga2, the conf directory is /etc/icinga2/conf.d
 
@@ -84,20 +52,12 @@ The next templates are using to configure the Icinga2, the conf directory is /et
 - users.conf
 - icinga2.conf
 
-Also we have another template `passwd.erb`, this file contains the http passwords. Next, we create and move the template used in  ops-icinga2::client scripts, like the conf file for pingdom or rds.
-
-When this is done, the recipe start the apache2, npcd, icinga2 and nagios-nrpe-server services.
+Also we have another template `passwd.erb`, this file contains the http passwords. Finally, the recipe start the apache2, npcd, icinga2 and nagios-nrpe-server services.
 
 ## ops-icinga2::config
 
-This recipe is use it for install some plugins and additional features to our server. First, we need python so the recipe download and install it. Using the pip instruction we download and install
+This recipe is using mainly for configure alerts. So this recipe creates the templates to set notifications to slack and pagerduty. The configuration variables are in the attrbutes file.
 
-- icinga-slack-webhook
-- nagios-plugin-elasticsearch
-- awscli
-- boto
-
-The recipe copy to the instance some config files for last packages.
 In this recipe we have two cron instructions, the first one is used to execute this recipe every a half hour (1:30, 2:30, 3:30...) and update the values for the Icinga2 server. The second run /etc/icinga2/conf.d/icinga2_opsworks.py, this file search all the instances in the same layer and call to icinga2_config.py on each one who execute the cfg files in the instance and this process is repeat it each hour.
 
 ## Attributes
