@@ -1,5 +1,6 @@
 # ops-jenkins
 
+To install a jenkins server you need to run the ops-jenkins::default recipe.
 
 ## Cookbook Dependencies
 
@@ -35,6 +36,9 @@ https://supermarket.chef.io/cookbooks/ssh_known_hosts/versions/2.0.0
 
 This recipe is used to download and install jenkins plugins such as git, git client and slack. Creates the main directories for our jenkins server and create a user and calls another recipes.
 
+# ops-jenkins::plugins
+
+This recipe includes all the plugins that you can install using chef. You can include more or remove them.
 
 # Attributes
 

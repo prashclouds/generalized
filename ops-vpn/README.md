@@ -1,5 +1,7 @@
 # ops-vpn
 
+To install an openvpn server you need to run the ops-vpn::default recipe.
+
 ## ops-vpn::default
 
 The default recipe download the openvpn package and install it using dpkg instruction, so you need to use an Ubuntu AMI for this.
