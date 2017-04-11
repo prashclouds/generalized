@@ -374,28 +374,28 @@ apply Service "tcp80" {
 #  assign where "rabbitmq" in host.groups
 #}
 #
-apply Service "RabbitMQ Server Overview Check" {
-  import "generic-service"
-  import "pnp-svc"
-  check_command = "nrpe"
-  vars.nrpe_command = "check_rabbitmq_overview!<%=node['rabbitmq']['icinga']['user']['name']%>!<%=node['rabbitmq']['icinga']['user']['pass']%>"
-  vars.sla = "24x7"
-  check_interval = 5
-  retry_interval = 3
-  max_check_attempts = 5
-  assign where "rabbitmq" in host.groups
-}
-apply Service "RabbitMQ Queue Statistics" {
-  import "generic-service"
-  import "pnp-svc"
-  check_command = "nrpe"
-  vars.nrpe_command = "check_rabbitmq_statistics!<%=node['rabbitmq']['icinga']['user']['name']%>!<%=node['rabbitmq']['icinga']['user']['pass']%>"
-  vars.sla = "24x7"
-  check_interval = 5
-  retry_interval = 3
-  max_check_attempts = 5
-  assign where "rabbitmq" in host.groups
-}
+#apply Service "RabbitMQ Server Overview Check" {
+#  import "generic-service"
+#  import "pnp-svc"
+#  check_command = "nrpe"
+#  vars.nrpe_command = "check_rabbitmq_statistics!USERNAMEHERE!PASSWORDHERE"
+#  vars.sla = "24x7"
+#  check_interval = 5
+#  retry_interval = 3
+#  max_check_attempts = 5
+#  assign where "rabbitmq" in host.groups
+#}
+#apply Service "RabbitMQ Queue Statistics" {
+#  import "generic-service"
+#  import "pnp-svc"
+#  check_command = "nrpe"
+#  vars.nrpe_command = "check_rabbitmq_statistics!USERNAMEHERE!PASSWORDHERE"
+#  vars.sla = "24x7"
+#  check_interval = 5
+#  retry_interval = 3
+#  max_check_attempts = 5
+#  assign where "rabbitmq" in host.groups
+#}
 apply Service "tcp5672" {
   import "generic-service"
   import "pnp-svc"
