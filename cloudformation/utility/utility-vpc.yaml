@@ -39,10 +39,13 @@ Outputs:
     Value: !Ref 'OpsWorksSecurityGroup'
   JenkinsSecurityGroup:
     Description: JenkinsSecurityGroup
-    Value: !Ref: 'JenkinsSecurityGroup'
+    Value: !Ref 'JenkinsSecurityGroup'
   VPNSecurityGroup:
     Description: VPNSecurityGroup
-    Value: !Ref: 'VPNSecurityGroup'
+    Value: !Ref 'VPNSecurityGroup'
+  IcingaSecurityGroup:
+    Description: IcingaSecurityGroup
+    Value: !Ref 'IcingaSecurityGroup'
 Parameters:
   KeyName:
     Type: AWS::EC2::KeyPair::KeyName
@@ -80,6 +83,9 @@ Parameters:
     Type: String
   Stackname:
     Type: String
+  ShOfficeCidr:
+    Type: String
+    Default: 192.168.50.0/24
   InstanceTenancy:
     Default: default
     Description: 'VPC tenancy: default or dedicated'
