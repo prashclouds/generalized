@@ -83,11 +83,6 @@ Parameters:
     Type: String
   Stackname:
     Type: String
-  VpcPeeringID:
-    Default: ""
-    Type: String
-  VpcPeeringCIDR:
-    Type: String
   ShOfficeCidr:
     Type: String
     Default: 192.168.50.0/24
@@ -99,8 +94,6 @@ Parameters:
     MaxLength: '64'
     AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
     ConstraintDescription: either default or dedicated
-Conditions:
-    CreatePeering: !Not [!Equals [!Ref VpcPeeringID, ""]]
 Mappings:
   AWSNATAMI:
     us-east-1:
@@ -606,23 +599,3 @@ Resources:
         FromPort: '-1'
         ToPort: '-1'
         CidrIp: 0.0.0.0/0
-  VPCPeeringConnection:
-    Type: AWS::EC2::VPCPeeringConnection
-    Condition: CreatePeering
-    Properties:
-      PeerVpcId: !Ref 'VpcPeeringID'
-      VpcId: !Ref 'VPC'
-  PeeringRoute1:
-    Type: AWS::EC2::Route
-    Condition: CreatePeering
-    Properties:
-      DestinationCidrBlock: !Ref 'VpcPeeringCIDR'
-      RouteTableId: !Ref 'PublicRouteTable'
-      VpcPeeringConnectionId: !Ref 'VPCPeeringConnection'
-  PeeringRoute2:
-    Type: AWS::EC2::Route
-    Condition: CreatePeering
-    Properties:
-      DestinationCidrBlock: !Ref 'VpcPeeringCIDR'
-      RouteTableId: !Ref 'PrivateRouteTable'
-      VpcPeeringConnectionId: !Ref 'VPCPeeringConnection'

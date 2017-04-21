@@ -60,10 +60,6 @@ Parameters:
     Type: String
   GitRepoU:
     Type: String
-  VpcIDPeering:
-    Type: String
-  VpcCIDRPeering:
-    Type: String
 Resources:
   vpcstack:
     Type: AWS::CloudFormation::Stack
@@ -88,8 +84,6 @@ Resources:
         AvailabilityZone3: !Ref 'VpcAvailabilityZone3'
         AvailabilityZone4: !Ref 'VpcAvailabilityZone4'
         AvailabilityZone5: !Ref 'VpcAvailabilityZone5'
-        VpcPeeringID: !Ref 'VpcIDPeering'
-        VpcPeeringCIDR: !Ref 'VpcCIDRPeering'
   opsworks:
     Type: AWS::CloudFormation::Stack
     Properties:
