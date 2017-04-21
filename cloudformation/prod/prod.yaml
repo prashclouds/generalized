@@ -58,8 +58,6 @@ Parameters:
     Default: 10.20.10.0/24
   Bucket:
     Type: String
-  GitRepoU:
-    Type: String
   VpcIDPeering:
     Type: String
   VpcCIDRPeering:
@@ -68,7 +66,7 @@ Resources:
   vpcstack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub 'http://s3.amazonaws.com/${Bucket}/utility/utility-vpc.yaml'
+      TemplateURL: !Sub 'http://s3.amazonaws.com/${Bucket}/prod/prod-vpc.yaml'
       Parameters:
         pubcidr1: !Ref 'pubcidr1'
         pubcidr2: !Ref 'pubcidr2'
@@ -82,7 +80,7 @@ Resources:
         pricidr5: !Ref 'pricidr5'
         vpccidr: !Ref 'vpccidr'
         KeyName: !Ref 'KeyName'
-        Stackname: utility
+        Stackname: prod
         AvailabilityZone1: !Ref 'VpcAvailabilityZone1'
         AvailabilityZone2: !Ref 'VpcAvailabilityZone2'
         AvailabilityZone3: !Ref 'VpcAvailabilityZone3'
@@ -90,17 +88,3 @@ Resources:
         AvailabilityZone5: !Ref 'VpcAvailabilityZone5'
         VpcPeeringID: !Ref 'VpcIDPeering'
         VpcPeeringCIDR: !Ref 'VpcCIDRPeering'
-  opsworks:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub 'http://s3.amazonaws.com/${Bucket}/utility/utility-opsworks.yaml'
-      Parameters:
-        PrivateSubnet1: !GetAtt [vpcstack, Outputs.prvsub1]
-        OpsWorksSecurityGroup: !GetAtt [vpcstack, Outputs.OpsWorksSecurityGroup]
-        IcingaSecurityGroup: !GetAtt [vpcstack, Outputs.IcingaSecurityGroup]
-        JenkinsSecurityGroup: !GetAtt [vpcstack, Outputs.JenkinsSecurityGroup]
-        VPNSecurityGroup: !GetAtt [vpcstack, Outputs.VPNSecurityGroup]
-        VpcId: !GetAtt [vpcstack, Outputs.VpcId]
-        KeyName: !Ref 'KeyName'
-        GitRepo: !Ref 'GitRepoU'
-        Stackname: utility
