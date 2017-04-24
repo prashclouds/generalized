@@ -25,37 +25,37 @@ Parameters:
     Default: us-east-1e
   vpccidr:
     Type: String
-    Default: 10.20.0.0/16
+    Default: 0.0.0.0/0
   pubcidr1:
     Type: String
-    Default: 10.20.1.0/24
+    Default: 0.0.0.0/0
   pubcidr2:
     Type: String
-    Default: 10.20.2.0/24
+    Default: 0.0.0.0/0
   pubcidr3:
     Type: String
-    Default: 10.20.3.0/24
+    Default: 0.0.0.0/0
   pubcidr4:
     Type: String
-    Default: 10.20.4.0/24
+    Default: 0.0.0.0/0
   pubcidr5:
     Type: String
-    Default: 10.20.5.0/24
+    Default: 0.0.0.0/0
   pricidr1:
     Type: String
-    Default: 10.20.6.0/24
+    Default: 0.0.0.0/0
   pricidr2:
     Type: String
-    Default: 10.20.7.0/24
+    Default: 0.0.0.0/0
   pricidr3:
     Type: String
-    Default: 10.20.8.0/24
+    Default: 0.0.0.0/0
   pricidr4:
     Type: String
-    Default: 10.20.9.0/24
+    Default: 0.0.0.0/0
   pricidr5:
     Type: String
-    Default: 10.20.10.0/24
+    Default: 0.0.0.0/0
   Bucket:
     Type: String
   VpcIDPeering:
