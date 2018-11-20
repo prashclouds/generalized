@@ -1,0 +1,160 @@
+Description:
+  It creates the Service and all its dependencies
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+  Cluster:
+    Description: ECS Cluster
+    Type: String
+  BucketName:
+    Type: String
+  ContainerPort:
+    Default: 8080
+    Type: Number
+  Path:
+    Type: String
+    Default: /*
+  HealthCheckPath:
+    Type: String
+    Default: /
+  LoadBalancerArn:
+    Type: String
+  ListenerArn:
+    Type: String
+  HttpsListenerArn:
+    Type: String
+  VpcId:
+    Type: String
+  ServiceName:
+    Type: String
+  TargetGroupName:
+    Type: String
+  Priority:
+    Type: String
+  ClusterType:
+    Type: String
+  ECSSG:
+    Type: String
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+  DDApiKey:
+    Type: String
+
+Conditions:
+  IsFargate: !Equals [ !Ref ClusterType, "Fargate" ]
+
+Resources:
+  ECR:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub ${ServiceName}-${Environment}
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Keep only last 200 images",
+                "selection": {
+                  "tagStatus": "any",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 200
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+
+  HttpListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - !Ref Path
+      ListenerArn: !Ref ListenerArn
+      Priority: !Ref Priority
+
+  HttpsListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - !Ref Path
+      ListenerArn: !Ref HttpsListenerArn
+      Priority: !Ref Priority
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      TargetType: !If
+        - IsFargate
+        - ip
+        - instance
+      VpcId: !Ref VpcId
+      Port: !Ref ContainerPort
+      Protocol: HTTP
+      Matcher:
+        HttpCode: 200-399
+      Name: !Ref TargetGroupName
+      HealthCheckPath: !Ref HealthCheckPath
+      HealthCheckProtocol: HTTP
+      HealthCheckIntervalSeconds: 20
+      HealthCheckTimeoutSeconds: 10
+      HealthyThresholdCount: 10
+      UnhealthyThresholdCount: 10
+
+  TaskDefinition:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${BucketName}/application/${ServiceName}.yml"
+      TimeoutInMinutes: '60'
+      Parameters:
+        Environment: !Ref Environment
+        ServiceName: !Ref ServiceName
+        ContainerPort: !Ref ContainerPort
+        ClusterType: !Ref ClusterType
+        DockerImage: !Join [ ".", [ !Ref "AWS::AccountId", "dkr.ecr", !Ref "AWS::Region", !Join [ "/", [ "amazonaws.com", !Ref "ServiceName" ] ] ] ]
+        DDApiKey: !Ref DDApiKey
+
+  Service:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: !Ref ServiceName
+      Cluster: !Ref Cluster
+      DesiredCount: 0
+      TaskDefinition: !GetAtt TaskDefinition.Outputs.TaskDefinition
+      LaunchType: !If
+        - IsFargate
+        - FARGATE
+        - !Ref AWS::NoValue
+      NetworkConfiguration:
+        !If
+          - IsFargate
+          - AwsvpcConfiguration:
+              AssignPublicIp: ENABLED
+              SecurityGroups:
+                - !Ref ECSSG
+              Subnets: !Ref SubnetIds
+          - !Ref AWS::NoValue
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      LoadBalancers:
+        - ContainerName: !Ref ServiceName
+          ContainerPort: !Ref ContainerPort
+          TargetGroupArn: !Ref TargetGroup
+Outputs:
+  TaskDefArn:
+    Value: !GetAtt TaskDefinition.Outputs.TaskDefinition

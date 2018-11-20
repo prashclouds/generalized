@@ -1,0 +1,86 @@
+service: auction-frontier
+
+provider:
+  name: aws
+  stackName: ${file(serverless.vars.yml):stack-name}
+  apiName: ${file(serverless.vars.yml):api-name}
+  region: ${file(serverless.vars.yml):aws-region}
+  logRetentionInDays: 90
+  runtime: python3.6
+  endpointType: regional
+  role: GitPullRole
+
+package:
+  exclude:
+    - ./**
+  include:
+    - lambdas/**
+
+functions:
+
+  slack_app:
+    handler: lambdas/slack_handler.handler
+    timeout: 10
+    environment:
+      LAMBDA_NAME: auction-frontier-${self:provider.stage}-slack_deploy
+      BUCKET_NAME: ${file(serverless.vars.yml):stack-name}-codepipeline
+      BUCKET_KEY : environment_state
+      ENVIRONMENT_NAME: ${file(serverless.vars.yml):stack-name}
+    events:
+      - http:
+          path: slackapp
+          method: post
+          cors: true
+          integration: lambda
+          request:
+            passThrough: WHEN_NO_MATCH
+            template:
+              application/x-www-form-urlencoded: "{\n  \"postBody\" : $input.json(\"$\" ) \n}"
+
+  slack_deploy:
+    handler: lambdas/git_lambda_function/slack_deploy.handler
+    timeout: 300
+    environment:
+      BUCKET_NAME: ${file(serverless.vars.yml):stack-name}-codepipeline
+      BUCKET_KEY : environment_state
+      ENVIRONMENT_NAME: ${file(serverless.vars.yml):stack-name}
+
+  trigger_git_pull:
+    handler: lambdas/git_lambda_function/trigger_deploy.trigger_git_pull
+    timeout: 30
+    environment:
+      LAMBDA_NAME: auction-frontier-${self:provider.stage}-git_pull
+    events:
+      - http:
+          path: gitpull
+          method: post
+          cors: true
+          integration: lambda
+          request:
+            passThrough: WHEN_NO_MATCH
+
+  git_pull:
+    handler: lambdas/git_lambda_function/git_function.handler
+    timeout: 300
+    environment:
+      BUCKET_NAME: ${file(serverless.vars.yml):stack-name}-codepipeline
+      BUCKET_KEY : environment_state
+      ENVIRONMENT_NAME: ${file(serverless.vars.yml):stack-name}
+
+
+resources:
+  - ${file(infrastructure/s3.yml)}
+  - ${file(infrastructure/parameter_store.yml)}
+  - ${file(infrastructure/iam.yml)}
+  - ${file(infrastructure/code_pipeline.yml)}
+
+plugins:
+  - serverless-domain-manager
+
+custom:
+  customDomain:
+    domainName: pipeline.velocicast.auctionfrontierdevelopment.com
+    certificateName: '*.velocicast.auctionfrontierdevelopment.com'
+    basePath: ''
+    stage: ${self:provider.stage}
+    createRoute53Record: true

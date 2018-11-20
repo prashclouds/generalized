@@ -1,0 +1,127 @@
+Description:
+  APP_NAME TaskDefinition
+
+Parameters:
+  Environment:
+    Type: String
+  ServiceName:
+    Type: String
+  ContainerPort:
+    Type: String
+  DockerImage:
+    Type: String
+  ClusterType:
+    Type: String
+  DDApiKey:
+    Type: String
+  AppName:
+    Type: String
+    Default: rest
+
+Conditions:
+    IsFargate: !Equals [ !Ref ClusterType, "Fargate" ]
+
+Resources:
+  ECSLogGroup:
+    Type: "AWS::Logs::LogGroup"
+    Properties:
+      LogGroupName: !Sub ${ServiceName}-${Environment}
+      RetentionInDays: 7
+
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub ${ServiceName}-${Environment}
+      ExecutionRoleArn: !If
+        - IsFargate
+        - !Sub "arn:aws:iam::${AWS::AccountId}:role/ecsTaskExecutionRole"
+        - !Ref AWS::NoValue
+      Cpu: !If
+        - IsFargate
+        - 2048
+        - !Ref AWS::NoValue
+      Memory: !If
+        - IsFargate
+        - 4096
+        - !Ref AWS::NoValue
+      NetworkMode: !If
+        - IsFargate
+        - awsvpc
+        - !Ref AWS::NoValue
+      RequiresCompatibilities:
+        - !If
+          - IsFargate
+          - FARGATE
+          - !Ref AWS::NoValue
+      TaskRoleArn: !Ref Taskrole
+      ContainerDefinitions:
+        - Name: !Ref ServiceName
+          PortMappings:
+            - ContainerPort: !Ref ContainerPort
+          Image: !Sub ${DockerImage}-${Environment}:latest
+          Command: ["/home/node/entrypoint.sh"]
+          Environment:
+            - Name: AWS_ENV_PATH
+              Value: !Sub /${Environment}/APP_NAME
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+            - Name: APP_NAME
+              Value: !Ref AppName
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Sub ${ServiceName}-${Environment}
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: !Ref Environment
+          MemoryReservation: 4096
+        - Name: datadog-agent
+          Image: datadog/agent:latest
+          Essential: true
+          Environment:
+            - Name: DD_API_KEY
+              Value: !Ref DDApiKey
+            - Name: ECS_FARGATE
+              Value: true
+
+  Taskrole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ServiceName}-${Environment}-role
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      Policies:
+        - PolicyName: !Sub ${ServiceName}-${Environment}-task
+          PolicyDocument: |
+            {
+              "Version": "2012-10-17",
+              "Statement": [{
+                "Effect": "Allow",
+                "Action": [
+                  "ecs:*",
+                  "ecr:*",
+                  "cloudformation:*",
+                  "s3:*",
+                  "kms:*",
+                  "logs:*",
+                  "ssm:*"
+                ],
+                "Resource": "*"
+              }]
+            }
+
+Outputs:
+  TaskDefinition:
+    Value: !Ref TaskDefinition

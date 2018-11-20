@@ -1,2 +1,1 @@
-# generalized
-generalized cookbooks for easy deployment
+# Rogue One Team

@@ -1,0 +1,123 @@
+Description:
+  Relational Database Service (mysql)
+
+Parameters:
+  Environment:
+    Type: String
+  Engine:
+    Type: String
+    AllowedValues:
+      - mysql
+      - postgres
+      - mariadb
+  EngineVersion:
+    Type: String
+  InstanceName:
+    Type: String
+  InstanceType:
+    Type: String
+    Default: db.t2.medium
+  Password:
+    Type: String
+    NoEcho: true
+  Storage:
+    Type: Number
+    Default: 100
+  SubnetIds:
+    Type: CommaDelimitedList
+  Username:
+    Type: String
+    Default: "postgres"
+    NoEcho: true
+  VpcCidr:
+    Type: String
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+
+Conditions:
+  PostgresEngine: !Equals [!Ref Engine, "postgres"]
+
+Resources:
+  Database:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Delete
+    DependsOn:
+      - SubnetGroup
+    Properties:
+      AutoMinorVersionUpgrade: false
+      CopyTagsToSnapshot: true
+      DBInstanceClass: !Ref InstanceType
+      StorageType: gp2
+      DBInstanceIdentifier: !Ref InstanceName
+      AllocatedStorage: 200
+      DBSubnetGroupName: !Ref SubnetGroup
+      Engine: !Ref Engine
+      MultiAZ: false
+      BackupRetentionPeriod: "7"
+      PreferredBackupWindow: "21:30-22:00"
+      EngineVersion: !Ref EngineVersion
+      MasterUsername: !Ref Username
+      MasterUserPassword: !Ref Password
+      StorageEncrypted: false
+      DBParameterGroupName: !Ref DBParameterGroup
+      VPCSecurityGroups:
+        - !Ref SecurityGroup
+      Tags:
+        - Key: StackName
+          Value: !Ref AWS::StackName
+        - Key: Environment
+          Value: !Ref Environment
+
+  DBParameterGroup:
+    Type: AWS::RDS::DBParameterGroup
+    Properties:
+      Description: Maria DB Parameter Group
+      Family: mariadb10.3
+      Parameters:
+        log_bin_trust_function_creators: 1
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Ref AWS::StackName
+      VpcId: !Ref VpcId
+      Tags:
+        - Key: StackName
+          Value: !Ref AWS::StackName
+        - Key: Environment
+          Value: !Ref Environment
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: !If [PostgresEngine, 5432, 3306]
+          IpProtocol: tcp
+          ToPort: !If [PostgresEngine, 5432, 3306]
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: -1
+          IpProtocol: -1
+          ToPort: -1
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+
+  SubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: !Ref AWS::StackName
+      SubnetIds: !Ref SubnetIds
+
+Outputs:
+  DatabaseId:
+    Value: !Ref Database
+  DatabaseDNS:
+    Value: !GetAtt Database.Endpoint.Address
+  DatabaseUrl:
+    Value: !Sub
+      - "${Engine}://${Username}:${Password}@${Host}:${Port}"
+      - { Host: !GetAtt Database.Endpoint.Address,  Port: !GetAtt Database.Endpoint.Port}
+  Engine:
+    Value: !Ref Engine
+  EngineVersion:
+    Value: !Ref EngineVersion
+  InstanceType:
+    Value: !Ref InstanceType

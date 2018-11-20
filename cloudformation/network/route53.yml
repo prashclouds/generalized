@@ -1,0 +1,22 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  Name:
+    Type: String
+  HostedZoneId:
+    Type: String
+  DNSName:
+    Type: String
+  AliasHostedZoneId:
+    Type: String
+
+Resources:
+  RecordSet:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref Name
+      Type: CNAME
+      TTL: 300
+      ResourceRecords:
+       - !Ref DNSName

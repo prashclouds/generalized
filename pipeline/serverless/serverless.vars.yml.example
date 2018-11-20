@@ -1,0 +1,7 @@
+aws-region: "****"
+stack-name: "****"
+api-name:   "****"
+npm-token:  "****"
+bitbucket-password: "****"
+bitbucket-username: "****"
+slack-token: "****"

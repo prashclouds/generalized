@@ -1,0 +1,46 @@
+Resources:
+
+  ArtifactStoreS3Location:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+        AccessControl: Private
+        VersioningConfiguration:
+          Status: Enabled
+        BucketName: ${file(serverless.vars.yml):stack-name}-artifactstore
+        BucketEncryption:
+          ServerSideEncryptionConfiguration:
+            - ServerSideEncryptionByDefault:
+                SSEAlgorithm: AES256
+        LifecycleConfiguration:
+          Rules:
+            - AbortIncompleteMultipartUpload:
+                DaysAfterInitiation: 30
+              Id: object-lifecycle-rule
+              NoncurrentVersionExpirationInDays: 90
+              Status: Enabled
+
+  SourceS3Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+        AccessControl: Private
+        VersioningConfiguration:
+          Status: Enabled
+        BucketName: ${file(serverless.vars.yml):stack-name}-codepipeline
+        BucketEncryption:
+          ServerSideEncryptionConfiguration:
+            - ServerSideEncryptionByDefault:
+                SSEAlgorithm: AES256
+        LifecycleConfiguration:
+          Rules:
+            - AbortIncompleteMultipartUpload:
+                DaysAfterInitiation: 30
+              Id: object-lifecycle-rule
+              NoncurrentVersionExpirationInDays: 90
+              Status: Enabled
+
+Outputs:
+  SourceS3Bucket:
+    Value:
+      "Ref": SourceS3Bucket

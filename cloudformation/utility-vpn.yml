@@ -1,0 +1,170 @@
+Description:
+  Utility-VPN Template
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+    - Label:
+        default: General configuration
+      Parameters:
+        - Environment
+        - BucketName
+        - KeyName
+  Stack:
+    Value: 0
+  VersionDate:
+    Value: 20160518
+  Identifier:
+    Value: main
+  Input:
+    Description: Input of all required parameters in nested stacks
+  Output:
+    Description: N/A
+
+Parameters:
+  BucketName:
+    Type: String
+    Description: Bucket where the templates are stored.
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-.]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, periods (.), and hyphens (-). It cannot start or
+      end with a hyphen (-).
+    Default: "auction-frontier-cloudformation"
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: eu-west-1
+    Description: AWS Keypair for instances SSH. If you select Fargate in the ClusterType, this field will not take effect.
+  VpcCIDR:
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+    Default: 10.0.0.0/16
+    Description: VPC CIDR Block (eg 10.0.0.0/16)
+    Type: String
+  Environment:
+    Type: String
+    Default: utility
+    AllowedValues:
+      - utility
+    Description: Environment Name - This is used like a suffix for many resources.
+
+Mappings:
+  AWSRegionToAMI:
+    us-east-2:
+      AMI: ami-0303c7b2e7066b60d
+    us-east-1:
+      AMI: ami-06934425f62d05cba
+    us-west-2:
+      AMI: ami-a0cfeed8
+    us-west-1:
+      AMI: ami-0bdb828fd58c52235
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Ref AWS::StackName
+        - Key: Environment
+          Value: !Ref Environment
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Ref AWS::StackName
+        - Key: Environment
+          Value: !Ref Environment
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: !Select [0, !Cidr [!Ref VpcCIDR, 6, 8]]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName} Public
+        - Key: Environment
+          Value: !Ref Environment
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName} Public
+        - Key: Environment
+          Value: !Ref Environment
+
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet1
+
+  DefaultSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: "AllowVPC"
+      GroupDescription: "Security group allow VPC"
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: udp
+          FromPort: 1194
+          ToPort: 1194
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 943
+          ToPort: 943
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+
+  Vpn:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !FindInMap [AWSRegionToAMI, !Ref "AWS::Region", AMI]
+      KeyName: !Ref KeyName
+      InstanceType: t2.medium
+      BlockDeviceMappings:
+        - DeviceName: /dev/sdm
+          Ebs:
+            VolumeType: gp2
+            DeleteOnTermination: false
+            VolumeSize: 25
+          NoDevice: {}
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          SubnetId: !Ref PublicSubnet1
+          GroupSet:
+            - Ref: DefaultSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "vpn_${Environment}"

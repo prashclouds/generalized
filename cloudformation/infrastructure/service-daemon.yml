@@ -1,0 +1,52 @@
+Description:
+  It creates the ECR, the Service and all its dependencies
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+  Cluster:
+    Description: ECS Cluster
+    Type: String
+  DataDogApiKey:
+    Type: String
+  BucketName:
+    Type: String
+  VpcId:
+    Type: String
+  ServiceName:
+    Type: String
+  ECSSG:
+    Type: String
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+
+Resources:
+
+  TaskDefinition:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${BucketName}/application/${ServiceName}.yml"
+      TimeoutInMinutes: '60'
+      Parameters:
+        Environment: !Ref Environment
+        ServiceName: !Ref ServiceName
+        DDApiKey: !Ref DataDogApiKey
+
+  Service:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: !Ref ServiceName
+      Cluster: !Ref Cluster
+      DesiredCount: 0
+      TaskDefinition: !GetAtt TaskDefinition.Outputs.TaskDefinition
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !Ref ECSSG
+          Subnets: !Ref SubnetIds
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100

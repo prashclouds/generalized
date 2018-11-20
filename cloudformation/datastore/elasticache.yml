@@ -1,0 +1,178 @@
+Description:
+  ElastiCache Cluster (Redis)
+
+Parameters:
+  Environment:
+    Type: String
+  AutoMinorVersionUpgrade:
+    Type: String
+    Default: false
+  ClusterName:
+    Type: String
+  DatabaseCount:
+    Type: Number
+    Default: 16
+  Engine:
+    Type: String
+    AllowedValues:
+      - memcached
+      - redis
+  NodeCount:
+    Type: Number
+    Default: 1
+  NodeType:
+    Type: String
+    Default: cache.t2.medium
+  SubnetIds:
+    Type: CommaDelimitedList
+  VpcCidr:
+    Type: String
+  VpcId:
+    Type: String
+
+Conditions:
+  RedisEngine: !Equals [!Ref Engine, "redis"]
+  ClusterSize1: !Equals [!Ref NodeCount, 1 ]
+  ClusterSize2: !Not [!Equals [!Ref NodeCount, 1 ]]
+
+Mappings:
+  CacheParameterGroupFamily:
+    memcached:
+      Name: memcached1.4
+    redis:
+      Name: redis4.0
+
+Resources:
+  Cluster2:
+    Type: AWS::ElastiCache::ReplicationGroup
+    Condition: ClusterSize2
+    Properties:
+      AtRestEncryptionEnabled: true
+      AutomaticFailoverEnabled: true
+      AutoMinorVersionUpgrade: !Ref AutoMinorVersionUpgrade
+      CacheNodeType: !Ref NodeType
+      SnapshotRetentionLimit: 7
+      SnapshotWindow: "21:00-22:00"
+      CacheParameterGroupName: !If
+        - RedisEngine
+        - !Ref ParameterGroup
+        - !Ref AWS::NoValue
+      CacheSubnetGroupName: !Ref SubnetGroup
+      Engine: !Ref Engine
+      EngineVersion: 3.2.6
+      NumCacheClusters: !Ref NodeCount
+      ReplicationGroupDescription: RedisReplicationGroup
+      SecurityGroupIds:
+        - !GetAtt SecurityGroup.GroupId
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+
+  Cluster1:
+    Condition: ClusterSize1
+    Type: AWS::ElastiCache::CacheCluster
+    DependsOn: ParameterGroup
+    Properties:
+      AutoMinorVersionUpgrade: !Ref AutoMinorVersionUpgrade
+      CacheNodeType: !Ref NodeType
+      CacheParameterGroupName: !If
+        - RedisEngine
+        - !Ref ParameterGroup
+        - !Ref AWS::NoValue
+      CacheSubnetGroupName: !Ref SubnetGroup
+      # ClusterName: !Ref ClusterName
+      Engine: !Ref Engine
+      NumCacheNodes: !Ref NodeCount
+      VpcSecurityGroupIds:
+        - !GetAtt SecurityGroup.GroupId
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+
+  ParameterGroup:
+    Type: AWS::ElastiCache::ParameterGroup
+    Properties:
+      CacheParameterGroupFamily: !FindInMap
+        - CacheParameterGroupFamily
+        - !Ref Engine
+        - Name
+      Description: "ElastiCache Parameter Group"
+      Properties: !If
+        - RedisEngine
+        - databases: !Ref DatabaseCount
+        - !Ref AWS::NoValue
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub "${Engine} Security Group"
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - CidrIp: !Ref VpcCidr
+          FromPort: !If [RedisEngine, 6379, 11211]
+          IpProtocol: tcp
+          ToPort: !If [RedisEngine, 6379, 11211]
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+
+  SubnetGroup:
+    Type: AWS::ElastiCache::SubnetGroup
+    Properties:
+      Description: !Sub "${Engine} Subnet Group"
+      SubnetIds: !Ref SubnetIds
+
+Outputs:
+  AutoMinorVersionUpgrade:
+    Value: !Ref AutoMinorVersionUpgrade
+  ClusterDNS:
+    Value: !Sub
+      - "${DNS}"
+      - DNS: !If
+          - RedisEngine
+          - !If
+            - ClusterSize2
+            - !GetAtt Cluster2.PrimaryEndPoint.Address
+            - !GetAtt Cluster1.RedisEndpoint.Address
+          - !If
+            - ClusterSize2
+            - !GetAtt Cluster2.ConfigurationEndPoint.Address
+            - !GetAtt Cluster1.ConfigurationEndpoint.Address
+  ClusterUrl:
+    Value: !Sub
+      - "${Engine}://${Host}:${Port}"
+      - Host: !If
+          - RedisEngine
+          - !If
+            - ClusterSize2
+            - !GetAtt Cluster2.PrimaryEndPoint.Address
+            - !GetAtt Cluster1.RedisEndpoint.Address
+          - !If
+            - ClusterSize2
+            - !GetAtt Cluster2.ConfigurationEndPoint.Address
+            - !GetAtt Cluster1.ConfigurationEndpoint.Address
+        Port: !If
+          - RedisEngine
+          - !If
+            - ClusterSize2
+            - !GetAtt Cluster2.PrimaryEndPoint.Port
+            - !GetAtt Cluster1.RedisEndpoint.Port
+          - !If
+            - ClusterSize2
+            - !GetAtt Cluster2.ConfigurationEndPoint.Port
+            - !GetAtt Cluster1.ConfigurationEndpoint.Port
+  DatabaseCount:
+    Value: !Ref DatabaseCount
+    Condition: RedisEngine
+  Engine:
+    Value: !Ref Engine
+  NodeCount:
+    Value: !Ref NodeCount
+  NodeType:
+    Value: !Ref NodeType
+  SubnetIds:
+    Value: !Join
+      - ","
+      - !Ref SubnetIds
+  VpcId:
+    Value: !Ref VpcId

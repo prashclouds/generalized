@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  Environment:
+    Type: String
+  KeyName:
+    Type: String
+    Default: af
+  InstanceType:
+    Type: String
+    Default: t2.medium
+  SubnetId:
+    Type: String
+  VpcId:
+    Type: String
+  EBSSize:
+    Type: String
+    Default: 32
+
+Mappings:
+  AWSRegionToAMI:
+    us-east-2:
+      AMI: ami-0303c7b2e7066b60d
+    us-east-1:
+      AMI: ami-0ff8a91507f77f867
+    us-west-2:
+      AMI: ami-a0cfeed8
+    us-west-1:
+      AMI: ami-0bdb828fd58c52235
+
+Resources:
+  SecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupName: !Sub "bastion_${Environment}"
+        GroupDescription: !Sub "bastion_${Environment}"
+        VpcId: !Ref VpcId
+        SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          CidrIp: 0.0.0.0/0
+        Tags:
+          - Key: Name
+            Value: bastion_sg
+          - Key: Environment
+            Value: !Ref Environment
+
+  Bastion:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !FindInMap [AWSRegionToAMI, !Ref "AWS::Region", AMI]
+      KeyName: !Ref KeyName
+      InstanceType: !Ref InstanceType
+      BlockDeviceMappings:
+        - DeviceName: /dev/sdm
+          Ebs:
+            VolumeType: gp2
+            DeleteOnTermination: false
+            VolumeSize: !Ref EBSSize
+          NoDevice: {}
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          SubnetId:
+            Ref: SubnetId
+          GroupSet:
+            - Ref: SecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "bastion_${Environment}"
+        - Key: Environment
+          Value: !Ref Environment

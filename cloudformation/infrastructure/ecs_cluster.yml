@@ -1,0 +1,326 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "ECS Cluster"
+
+Parameters:
+  Environment:
+    Type: String
+  ClusterName:
+    Type: String
+  ClusterType:
+    Description: ECS Cluster Type to launch services
+    Type: String
+    AllowedValues:
+      - EC2(OnDemand)
+      - Fargate
+  DesiredCapacity:
+    Type: String
+    Default: 3
+  InstanceType:
+    Description: Intance type using in the cluster
+    Type: String
+    Default: t2.medium
+  KeyPair:
+    Description: Amazon EC2 Key Pair
+    Type: AWS::EC2::KeyPair::KeyName
+  MaxBatchSize:
+    Type: String
+    Default: 1
+  MaxSize:
+    Type: String
+    Default: 5
+  MinInstancesInService:
+    Type: String
+    Default: 3
+  MinSize:
+    Type: String
+    Default: 1
+  PauseTime:
+    Type: String
+    Default: PT5M
+  SubnetIds:
+    Type: CommaDelimitedList
+  VpcId:
+    Type: String
+  # DataDogApiKey:
+  #   Type: String
+
+Mappings:
+  AWSRegionToAMI:
+  # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html
+    us-east-2:
+      AMI: ami-028a9de0a7e353ed9
+    us-east-1:
+      AMI: ami-00129b193dc81bc31
+    us-west-2:
+      AMI: ami-00d4f478
+    us-west-1:
+      AMI: ami-0d438d09af26c9583
+
+Conditions:
+  IsEC2: !Equals [ !Ref ClusterType, EC2(OnDemand) ]
+
+Resources:
+  EcsCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Ref ClusterName
+
+  EcsAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Condition: IsEC2
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT5M
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MinInstancesInService: !Ref MinInstancesInService
+        MaxBatchSize: !Ref MaxBatchSize
+        PauseTime: !Ref PauseTime
+        WaitOnResourceSignals: false
+    Properties:
+      VPCZoneIdentifier: !Ref SubnetIds
+      LaunchConfigurationName: !Ref EcsLaunchConfiguration
+      MinSize: !Ref MinSize
+      MaxSize: !Ref MaxSize
+      DesiredCapacity: !Ref DesiredCapacity
+      TerminationPolicies:
+        - Default
+      Tags:
+        - Key: Name
+          Value: !Ref ClusterName
+          PropagateAtLaunch: true
+        - Key: Environment
+          Value: !Ref Environment
+          PropagateAtLaunch: true
+
+  EcsInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Condition: IsEC2
+    Properties:
+      Path: /
+      Roles:
+        - !Ref EcsRole
+
+  EcsLaunchConfiguration:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Condition: IsEC2
+    Properties:
+      ImageId: !FindInMap [AWSRegionToAMI, !Ref "AWS::Region", AMI]
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyPair
+      AssociatePublicIpAddress: true
+      SecurityGroups:
+        - !Ref SecurityGroup
+      IamInstanceProfile: !Ref EcsInstanceProfile
+      BlockDeviceMappings:
+        - DeviceName: "/dev/xvdcy"
+          Ebs:
+            VolumeSize: "50"
+            VolumeType: "gp2"
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          echo ECS_CLUSTER=${ClusterName} >> /etc/ecs/ecs.config
+          echo ECS_CONTAINER_STOP_TIMEOUT=90s >> /etc/ecs/ecs.config
+          echo ECS_ENGINE_TASK_CLEANUP_WAIT_DURATION=2h >> /etc/ecs/ecs.config
+          echo ECS_LOGLEVEL=info >> /etc/ecs/ecs.config
+
+          yum install -y python-pip
+          pip-2.6 install awscli
+          yum install -y aws-cfn-bootstrap
+          yum install -y git
+
+          #TODO Add DD and Logz.io configuration here
+
+          vgextend docker /dev/xvdcy
+          lvextend -L+100G /dev/docker/docker-pool
+          /opt/aws/bin/cfn-init -v --region ${AWS::Region} --stack ${AWS::StackName} --resource EcsLaunchConfiguration
+          /opt/aws/bin/cfn-signal -e 0 --region ${AWS::Region} --stack ${AWS::StackName} --resource EcsAutoScalingGroup
+    Metadata:
+      AWS::CloudFormation::Init:
+        config:
+          files:
+            "/etc/cfn/cfn-hup.conf":
+              mode: 000400
+              owner: root
+              group: root
+              content: !Sub |
+                [main]
+                stack=${AWS::StackId}
+                region=${AWS::Region}
+            "/etc/cfn/hooks.d/cfn-auto-reloader.conf":
+              mode: 000400
+              owner: root
+              group: root
+              content: !Sub |
+                [cfn-auto-reloader-hook]
+                triggers=post.update
+                path=Resources.ContainerInstances.Metadata.AWS::CloudFormation::Init
+                action=/opt/aws/bin/cfn-init -v --region ${AWS::Region} --stack ${AWS::StackName} --resource EcsLaunchConfiguration
+          commands:
+            01_add_instance_to_cluster:
+              command: !Sub echo ECS_CLUSTER=${EcsCluster} >> /etc/ecs/ecs.config
+          services:
+            sysvinit:
+              cfn-hup:
+                enabled: true
+                ensureRunning: true
+                files:
+                  - /etc/cfn/cfn-hup.conf
+                  - /etc/cfn/hooks.d/cfn-auto-reloader.conf
+
+  EcsRole:
+    Type: AWS::IAM::Role
+    Condition: IsEC2
+    Properties:
+      Path: /
+      RoleName: !Sub ${ClusterName}-EcsRole-${AWS::Region}
+      AssumeRolePolicyDocument: |
+        {
+          "Statement": [{
+            "Action": "sts:AssumeRole",
+            "Effect": "Allow",
+            "Principal": {
+              "Service": "ec2.amazonaws.com"
+            }
+          }]
+        }
+      Policies:
+        - PolicyName: ecs-service
+          PolicyDocument: |
+            {
+              "Statement": [{
+                "Effect": "Allow",
+                "Action": [
+                    "ecs:CreateCluster",
+                    "ecs:DeregisterContainerInstance",
+                    "ecs:DiscoverPollEndpoint",
+                    "ecs:Poll",
+                    "ecs:RegisterContainerInstance",
+                    "ecs:StartTelemetrySession",
+                    "ecs:UpdateContainerInstancesState",
+                    "ecs:Submit*",
+                    "ecr:*",
+                    "logs:CreateLogStream",
+                    "logs:CreateLogGroup",
+                    "logs:DescribeLogStreams",
+                    "logs:PutLogEvents",
+                    "ecr:BatchCheckLayerAvailability",
+                    "ecr:BatchGetImage",
+                    "ecr:GetDownloadUrlForLayer",
+                    "ecr:GetAuthorizationToken",
+                    "s3:CopyObject",
+                    "s3:GetObject",
+                    "s3:ListObjects",
+                    "s3:PutObject",
+                    "sns:Publish",
+                    "cloudformation:*"
+                  ],
+                  "Resource": "*"
+              }]
+            }
+
+  RolePolicies:
+    Type: AWS::IAM::Policy
+    Condition: IsEC2
+    Properties:
+      PolicyName: S3Download
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action: "*"
+            Resource: "*"
+      Roles:
+        - !Ref EcsRole
+
+  SecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: Allow tcp to client host
+        VpcId: !Ref VpcId
+        SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '0'
+          ToPort: '65535'
+          CidrIp: 0.0.0.0/0
+        SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: -1
+        Tags:
+          - Key: Name
+            Value: !Sub ${ClusterName}-LB
+          - Key: Environment
+            Value: !Ref Environment
+
+  ScaleDownAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsEC2
+    Properties:
+      ActionsEnabled: true
+      AlarmActions:
+        - !Ref ScaleDownPolicy
+      ComparisonOperator: LessThanOrEqualToThreshold
+      EvaluationPeriods: 3
+      MetricName: MemoryReservation
+      Namespace: AWS/ECS
+      Period: 60
+      Statistic: Average
+      Threshold: 50
+      Unit: Percent
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref ClusterName
+
+  ScaleDownPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Condition: IsEC2
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref EcsAutoScalingGroup
+      EstimatedInstanceWarmup: 300
+      MetricAggregationType: Average
+      PolicyType: StepScaling
+      StepAdjustments:
+        - MetricIntervalUpperBound: "0"
+          ScalingAdjustment: "-1"
+
+  ScaleUpMemoryAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsEC2
+    Properties:
+      ActionsEnabled: true
+      AlarmActions:
+        - !Ref ScaleUpPolicyOnDemand
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      MetricName: MemoryReservation
+      Namespace: AWS/ECS
+      Period: 60
+      Statistic: Average
+      Threshold: 70
+      Unit: Percent
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref ClusterName
+
+  ScaleUpPolicyOnDemand:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Condition: IsEC2
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref EcsAutoScalingGroup
+      EstimatedInstanceWarmup: 300
+      MetricAggregationType: Average
+      PolicyType: StepScaling
+      StepAdjustments:
+        - MetricIntervalLowerBound: 0
+          MetricIntervalUpperBound: 15
+          ScalingAdjustment: 1
+        - MetricIntervalLowerBound: 15
+          ScalingAdjustment: 2
+
+Outputs:
+  SecurityGroup:
+    Value: !Ref SecurityGroup
+  EcsCluster:
+    Value: !Ref EcsCluster

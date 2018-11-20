@@ -1,0 +1,22 @@
+Resources:
+
+  BitBucketUserNameParameter:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: /${file(serverless.vars.yml):stack-name}/BitBucketUserName
+      Type: String
+      Value: ${file(serverless.vars.yml):bitbucket-username}
+
+  BitBucketAppPasswordParameter:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: /${file(serverless.vars.yml):stack-name}/BitBucketAppPassword
+      Type: String
+      Value: ${file(serverless.vars.yml):bitbucket-password}
+
+  SlackTokenParameter:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: /${file(serverless.vars.yml):stack-name}/SlackToken
+      Type: String
+      Value: ${file(serverless.vars.yml):slack-token}

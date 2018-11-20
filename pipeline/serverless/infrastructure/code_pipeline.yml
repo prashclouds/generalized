@@ -1,0 +1,183 @@
+Resources:
+
+  CodeBuildApplication:
+      Description: Creating AWS CodeBuild for the AF
+      Type: AWS::CodeBuild::Project
+      Properties:
+        Artifacts:
+          Type: CODEPIPELINE
+        Description: Build Dockerfile images
+        Environment:
+          ComputeType: BUILD_GENERAL1_MEDIUM
+          Image: aws/codebuild/docker:17.09.0
+          EnvironmentVariables:
+            - Name: NPM_TOKEN
+              Value: ${file(serverless.vars.yml):npm-token}
+            - Name: DATABASE_BUCKET
+              Value:
+                "Ref": SourceS3Bucket
+            - Name: DATABASE_KEY
+              Value: environment_state
+          Type: LINUX_CONTAINER
+        Name:
+          "Fn::Join":
+            - ''
+            - - ${file(serverless.vars.yml):stack-name}
+              - '-build'
+        ServiceRole:
+          "Fn::GetAtt": [ CodeBuildTrustRole, Arn ]
+        Source:
+          Type: CODEPIPELINE
+          BuildSpec: buildspec.yml
+        Tags:
+          - Key: app-name
+            Value: ${file(serverless.vars.yml):stack-name}
+        TimeoutInMinutes: 20
+
+
+  CodeBuildTestApplication:
+      Description: Creating AWS CodeBuild for the AF
+      Type: AWS::CodeBuild::Project
+      Properties:
+        Artifacts:
+          Type: CODEPIPELINE
+        Description: Test Dockerfile images
+        Environment:
+          ComputeType: BUILD_GENERAL1_MEDIUM
+          Image: aws/codebuild/docker:17.09.0
+          EnvironmentVariables:
+            - Name: NPM_TOKEN
+              Value: ${file(serverless.vars.yml):npm-token}
+            - Name: BUCKET_NAME
+              Value:
+                "Ref": SourceS3Bucket
+          Type: LINUX_CONTAINER
+        Name:
+          "Fn::Join":
+            - ''
+            - - ${file(serverless.vars.yml):stack-name}
+              - '-test'
+        ServiceRole:
+          "Fn::GetAtt": [ CodeBuildTrustRole, Arn ]
+        Source:
+          Type: CODEPIPELINE
+          BuildSpec: testspec.yml
+        Tags:
+          - Key: app-name
+            Value: ${file(serverless.vars.yml):stack-name}
+        TimeoutInMinutes: 20
+
+  CodeBuildDeployApplication:
+      Description: Creating AWS CodeBuild for the AF
+      Type: AWS::CodeBuild::Project
+      Properties:
+        Artifacts:
+          Type: CODEPIPELINE
+        Description: Deploy Dockerfile images
+        Environment:
+          ComputeType: BUILD_GENERAL1_MEDIUM
+          Image: aws/codebuild/docker:17.09.0
+          EnvironmentVariables:
+            - Name: NPM_TOKEN
+              Value: ${file(serverless.vars.yml):npm-token}
+            - Name: DATABASE_BUCKET
+              Value:
+                "Ref": SourceS3Bucket
+            - Name: DATABASE_KEY
+              Value: environment_state
+          Type: LINUX_CONTAINER
+        Name:
+          "Fn::Join":
+            - ''
+            - - ${file(serverless.vars.yml):stack-name}
+              - '-deploy'
+        ServiceRole:
+          "Fn::GetAtt": [ CodeBuildTrustRole, Arn ]
+        Source:
+          Type: CODEPIPELINE
+          BuildSpec: deployspec.yml
+        Tags:
+          - Key: app-name
+            Value: ${file(serverless.vars.yml):stack-name}
+        TimeoutInMinutes: 20
+
+
+  AppPipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      RoleArn:
+        "Fn::GetAtt": [ CodePipelineTrustRole, Arn ]
+      Stages:
+        -
+          Name: Source
+          Actions:
+            -
+              Name: SourceAction
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Version: 1
+                Provider: S3
+              OutputArtifacts:
+                -
+                  Name: SourceOutput
+              Configuration:
+                S3Bucket:
+                  Ref: SourceS3Bucket
+                S3ObjectKey: Gitpull.zip
+              RunOrder: 1
+        -
+          Name: Build
+          Actions:
+            -
+              Name: BuildAction
+              InputArtifacts:
+                -
+                  Name: SourceOutput
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName:
+                  Ref: CodeBuildApplication
+              RunOrder: 2
+        -
+          Name: Test
+          Actions:
+            -
+              Name: BuildAction
+              InputArtifacts:
+                -
+                  Name: SourceOutput
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName:
+                  Ref: CodeBuildTestApplication
+              RunOrder: 3
+        -
+          Name: Deploy
+          Actions:
+            -
+              Name: BuildAction
+              InputArtifacts:
+                -
+                  Name: SourceOutput
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName:
+                  Ref: CodeBuildDeployApplication
+              RunOrder: 4
+      ArtifactStore:
+        Type: S3
+        Location:
+          Ref: ArtifactStoreS3Location

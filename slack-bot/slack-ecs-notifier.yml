@@ -1,0 +1,171 @@
+Description:
+  Cloudwatch Alarm and Lambda Function to send slack notifications
+
+Parameters:
+  EnvironmentName:
+    Description: A prefix for all resource names
+    Type: String
+
+  SlackChannel:
+    Description: The slack channel that will receive the messages (include the pound sign)
+    Type: String
+
+  SlackUsername:
+    Description: Input a username for the slack messages
+    Type: String
+
+  SlackEmoji:
+    Description: Emoji icon name for the slack messages (do not include the colons)
+    Type: String
+
+  SlackWebhookUrl:
+    Description: Your webhook url (i.e. /services/xxxxxxxxxxxx/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX)
+    Type: String
+    NoEcho: true
+
+Resources:
+  CloudwatchRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub ${EnvironmentName}-ECS-Notifier-Rule
+      Description: Catched when container task exit in ECS
+      EventPattern: |
+        {
+          "source": [
+            "aws.ecs"
+          ],
+          "detail-type": [
+            "ECS Task State Change"
+          ],
+          "detail": {
+            "lastStatus": [
+              "STOPPED"
+            ],
+            "stoppedReason": [
+              "Essential container in task exited"
+            ]
+          }
+        }
+      State: ENABLED
+      Targets:
+          - Arn: !Sub ${LambdaFunction.Arn}
+            Id: lambda-target
+
+  LambdaPermissions:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Sub ${LambdaFunction.Arn}
+      Principal: events.amazonaws.com
+
+  LambdaLogGroup:
+      Type: "AWS::Logs::LogGroup"
+      Properties:
+          LogGroupName: !Sub /aws/lambda/${EnvironmentName}-ECS-Slack-Notifier
+          RetentionInDays: 7
+
+  LambdaFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      FunctionName: !Sub ${EnvironmentName}-ECS-Slack-Notifier
+      Description: This functions receives alerts from Cloudwatch and sends messages to Slack
+      Runtime: nodejs8.10
+      Handler: index.handler
+      MemorySize: 512
+      Timeout: 30
+      Role: !GetAtt FunctionRole.Arn
+      Environment:
+        Variables:
+          SLACK_CHANNEL: !Ref SlackChannel
+          SLACK_USERNAME: !Ref SlackUsername
+          SLACK_EMOJI: !Ref SlackEmoji
+          SLACK_WEBHOOK_URL: !Ref SlackWebhookUrl
+      Code:
+        ZipFile: !Sub |
+          var https = require('https');
+          var util = require('util');
+
+          exports.handler = function(event, context) {
+              console.log(JSON.stringify(event));
+              const CLUSTER_NAME = event.detail.clusterArn.split('/')[1]
+              const CONTAINER_NAME = event.detail.containers[0].name
+              const CONTAINER_EXIT_CODE = event.detail.containers[0].exitCode
+
+              const slack_channel = process.env.SLACK_CHANNEL
+              const slack_username = process.env.SLACK_USERNAME
+              const slack_emoji = process.env.SLACK_EMOJI
+
+              var postData = {
+                  "channel": slack_channel,
+                  "username": slack_username,
+                  "text": "ECS container exited",
+                  "icon_emoji": ":"+slack_emoji+":"
+              };
+
+              var message = "*Cluster*: "+CLUSTER_NAME+"\n*Container*: "+CONTAINER_NAME+"\n*Exit code*: "+CONTAINER_EXIT_CODE;
+              var severity = "warning";
+
+              postData.attachments = [
+                  {
+                      "color": severity,
+                      "text": message
+                  }
+              ];
+
+              var options = {
+                  method: 'POST',
+                  hostname: 'hooks.slack.com',
+                  port: 443,
+                  path: process.env.SLACK_WEBHOOK_URL
+              };
+
+              var req = https.request(options, function(res) {
+                res.setEncoding('utf8');
+                res.on('data', function (chunk) {
+                  context.done(null);
+                });
+              });
+
+              req.on('error', function(e) {
+                console.log('problem with request: ' + e.message);
+              });
+
+              req.write(util.format("%j", postData));
+              req.end();
+          };
+
+  FunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${EnvironmentName}-ECSLambdaNotifierRole
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+          }
+      Policies:
+          - PolicyName: default-policy
+            PolicyDocument: !Sub |
+              {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Action": [
+                      "logs:*"
+                    ],
+                    "Resource": [
+                      "arn:aws:logs:*:*:*"
+                    ]
+                  }
+                ]
+              }

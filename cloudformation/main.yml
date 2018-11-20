@@ -1,0 +1,293 @@
+Description:
+  Main Template
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+    - Label:
+        default: General configuration
+      Parameters:
+        - Environment
+        - BucketName
+    - Label:
+        default: Network configuration
+      Parameters:
+        - VpcCIDR
+        - Certificate
+        - HostedZoneName
+        - HostedZoneId
+    - Label:
+        default: ECS configuration
+      Parameters:
+        - ClusterType
+        - InstanceTypeECS
+        - KeyName
+    - Label:
+        default: Datastore configuration
+      Parameters:
+        - InstanceTypeElasticCache
+        - InstanceTypeRDS
+        - DatabaseUsername
+        - DatabasePassword
+    - Label:
+        default: External tools configuration
+      Parameters:
+        - DataDogApiKey
+        - LogzToken
+  Stack:
+    Value: 0
+  VersionDate:
+    Value: 20160518
+  Identifier:
+    Value: main
+  Input:
+    Description: Input of all required parameters in nested stacks
+  Output:
+    Description: N/A
+
+Parameters:
+  BucketName:
+    Type: String
+    Description: Bucket where the templates are stored.
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-.]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, periods (.), and hyphens (-). It cannot start or
+      end with a hyphen (-).
+    Default: "client-cloudformation"
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: eu-west-1
+    Description: AWS Keypair for instances SSH. If you select Fargate in the ClusterType, this field will not take effect.
+  VpcCIDR:
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+    Default: 10.40.0.0/16
+    Description: VPC CIDR Block (eg 10.0.0.0/16)
+    Type: String
+  ClusterType:
+    Description: ECS Cluster Type to launch services
+    Type: String
+    Default: Fargate
+    AllowedValues:
+      - EC2(OnDemand)
+      - Fargate
+  InstanceTypeElasticCache:
+    Type: String
+    Default: cache.t2.medium
+    Description: For nodes with more than 2, use cache.m3.medium.
+    AllowedValues:
+      - cache.m3.medium
+      - cache.t2.micro
+      - cache.t2.medium
+      - cache.m4.large
+      - cache.m4.xlarge
+      - cache.r4.large
+      - cache.r4.xlarge
+  InstanceTypeRDS:
+    Type: String
+    Default: db.t2.medium
+    Description: RDS instance size.
+    AllowedValues:
+      - db.t2.micro
+      - db.t2.medium
+      - db.m4.large
+      - db.m4.xlarge
+      - db.r4.large
+      - db.r4.xlarge
+  InstanceTypeECS:
+    Type: String
+    Default: t2.large
+    AllowedValues:
+      - t2.medium
+      - t2.medium
+      - t2.large
+      - m4.large
+      - m4.xlarge
+      - c4.large
+      - c4.xlarge
+    Description: If you select Fargate in the ClusterType, this field will not take effect.
+  Environment:
+    Type: String
+    Default: adesa-perf1
+    Description: Environment Name - This is used like a suffix for many resources.
+  DataDogApiKey:
+    Type: String
+    NoEcho: true
+    Default: "DatadogKey"
+    Description: Delete this string if you do not want to enable logging to DataDog.
+  DatabaseUsername:
+    Type: String
+    NoEcho: true
+    Description: Specify a username for your RDS
+    Default: 2018dbuser
+  DatabasePassword:
+    Type: String
+    NoEcho: true
+    Description: Database user password (Change it)
+    Default: dbpassdev2018#
+  Certificate:
+    Type: String
+    Description: Certificate used in the ALB
+  HostedZoneName:
+    Type: String
+    Default: dnsdevelopment.com
+  HostedZoneId:
+    Type: String
+    Default: hostedzone
+
+Resources:
+  VPC:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://s3.amazonaws.com/${BucketName}/network/vpc.yml
+      TimeoutInMinutes: '60'
+      Parameters:
+        EnvironmentName: !Ref Environment
+        VpcCIDR: !Ref VpcCIDR
+
+  ElasticCache:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://s3.amazonaws.com/${BucketName}/datastore/elasticache.yml
+      TimeoutInMinutes: '60'
+      Parameters:
+        Environment: !Ref Environment
+        AutoMinorVersionUpgrade: true
+        ClusterName: !Ref Environment
+        Engine: "redis"
+        NodeCount: 1
+        NodeType: !Ref InstanceTypeElasticCache
+        SubnetIds: !GetAtt VPC.Outputs.PrivateSubnets
+        VpcCidr: !GetAtt VPC.Outputs.VpcCIDR
+        VpcId: !GetAtt VPC.Outputs.VPC
+
+  RDS:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://s3.amazonaws.com/${BucketName}/datastore/rds.yml
+      TimeoutInMinutes: '60'
+      Parameters:
+        Environment: !Ref Environment
+        Engine: "mariadb"
+        EngineVersion: "10.3.8"
+        InstanceName: !Ref Environment
+        InstanceType: !Ref InstanceTypeRDS
+        Username: !Ref DatabaseUsername
+        Password: !Ref DatabasePassword
+        Storage: 200
+        SubnetIds: !GetAtt VPC.Outputs.PrivateSubnets
+        VpcCidr: !GetAtt VPC.Outputs.VpcCIDR
+        VpcId: !GetAtt VPC.Outputs.VPC
+
+  ECSCluster:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://s3.amazonaws.com/${BucketName}/infrastructure/ecs_cluster.yml
+      TimeoutInMinutes: '60'
+      Parameters:
+        Environment: !Ref Environment
+        ClusterName: !Ref Environment
+        DesiredCapacity: 3
+        InstanceType: !Ref InstanceTypeECS
+        KeyPair: !Ref KeyName
+        MaxBatchSize: 1
+        MaxSize: 5
+        MinInstancesInService: 3
+        MinSize: 1
+        PauseTime: PT3M
+        ClusterType: !Ref ClusterType
+        SubnetIds: !GetAtt VPC.Outputs.PrivateSubnets
+        VpcId: !GetAtt VPC.Outputs.VPC
+
+  LoadBalancer:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://s3.amazonaws.com/${BucketName}/infrastructure/alb.yml
+      TimeoutInMinutes: '60'
+      Parameters:
+        Environment: !Ref Environment
+        PublicSubnetIds: !GetAtt VPC.Outputs.PublicSubnets
+        VpcId: !GetAtt VPC.Outputs.VPC
+        Certificate: !Ref Certificate
+        HostedZoneName: !Ref HostedZoneName
+
+  Route53:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://s3.amazonaws.com/${BucketName}/network/route53.yml
+      TimeoutInMinutes: '60'
+      Parameters:
+        Name: !Sub ${Environment}.velocicast.${HostedZoneName}
+        HostedZoneId: !Ref HostedZoneId
+        DNSName: !GetAtt LoadBalancer.Outputs.LoadBalancerUrl
+        AliasHostedZoneId: !GetAtt LoadBalancer.Outputs.LoadBalancerZone
+
+  ServiceVelocicast:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://s3.amazonaws.com/${BucketName}/infrastructure/service.yml
+      TimeoutInMinutes: '60'
+      Parameters:
+        Cluster: !GetAtt ECSCluster.Outputs.EcsCluster
+        BucketName: !Ref BucketName
+        ContainerPort: 3000
+        LoadBalancerArn: !GetAtt LoadBalancer.Outputs.LoadBalancerArn
+        ListenerArn: !GetAtt LoadBalancer.Outputs.ListenerArn
+        HttpsListenerArn: !GetAtt LoadBalancer.Outputs.HttpsListenerArn
+        VpcId: !GetAtt VPC.Outputs.VPC
+        Environment: !Ref Environment
+        SubnetIds: !GetAtt VPC.Outputs.PrivateSubnets
+        ServiceName: velocicast
+        ClusterType: !Ref ClusterType
+        ECSSG: !GetAtt ECSCluster.Outputs.SecurityGroup
+        TargetGroupName: !Sub velocicast-${Environment}
+        Priority: 30
+        HealthCheckPath: /env
+        DDApiKey: !Ref DataDogApiKey
+
+  ServiceWebsocket:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://s3.amazonaws.com/${BucketName}/infrastructure/service.yml
+      TimeoutInMinutes: '60'
+      Parameters:
+        Cluster: !GetAtt ECSCluster.Outputs.EcsCluster
+        BucketName: !Ref BucketName
+        ContainerPort: 3000
+        LoadBalancerArn: !GetAtt LoadBalancer.Outputs.LoadBalancerArn
+        ListenerArn: !GetAtt LoadBalancer.Outputs.ListenerArn
+        HttpsListenerArn: !GetAtt LoadBalancer.Outputs.HttpsListenerArn
+        VpcId: !GetAtt VPC.Outputs.VPC
+        Environment: !Ref Environment
+        SubnetIds: !GetAtt VPC.Outputs.PrivateSubnets
+        ServiceName: websocket
+        ClusterType: !Ref ClusterType
+        ECSSG: !GetAtt ECSCluster.Outputs.SecurityGroup
+        TargetGroupName: !Sub websocket-${Environment}
+        Path: /socket.io*
+        Priority: 20
+        HealthCheckPath: /env
+        DDApiKey: !Ref DataDogApiKey
+
+  ServiceRest:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://s3.amazonaws.com/${BucketName}/infrastructure/service.yml
+      TimeoutInMinutes: '60'
+      Parameters:
+        Cluster: !GetAtt ECSCluster.Outputs.EcsCluster
+        BucketName: !Ref BucketName
+        ContainerPort: 3000
+        LoadBalancerArn: !GetAtt LoadBalancer.Outputs.LoadBalancerArn
+        ListenerArn: !GetAtt LoadBalancer.Outputs.ListenerArn
+        HttpsListenerArn: !GetAtt LoadBalancer.Outputs.HttpsListenerArn
+        VpcId: !GetAtt VPC.Outputs.VPC
+        Environment: !Ref Environment
+        SubnetIds: !GetAtt VPC.Outputs.PrivateSubnets
+        ServiceName: rest
+        ClusterType: !Ref ClusterType
+        ECSSG: !GetAtt ECSCluster.Outputs.SecurityGroup
+        TargetGroupName: !Sub rest-${Environment}
+        Path: /api*
+        Priority: 10
+        HealthCheckPath: /env
+        DDApiKey: !Ref DataDogApiKey
