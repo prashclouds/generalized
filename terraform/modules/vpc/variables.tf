@@ -1,10 +1,48 @@
-variable "vpc" {}
+variable "region" {
+  type = "string"
+  description = "aws region"
+  default = "us-east-1"
+}
+variable "vpc" {
+  type        = "map"
+  description = "Map of AWS VPC settings"
 
-variable "environment" {}
+  default = {
+    cidr          = "192.168.100.0/24"
+    dns_hostnames = true
+    dns_support   = true
+    tag           = ""
+    tenancy       = "default"
+  }
+}
 
-variable "cluster_name" {}
+variable "environment" {
+  type    = "string"
+  default = "dev"
+}
 
-variable "public_subnets" {}
+variable "cluster_name" {
+  type    = "string"
+  default = "unitq"
+}
 
-variable "private_subnets" {}
+variable "public_subnets" {
+  type        = "map"
+  description = "Map of AWS availability zones (key) to subnet CIDR (value) assignments"
+
+  default = {
+    us-east-1a = "192.168.100.0/27"
+  }
+}
+
+variable "private_subnets" {
+  type        = "map"
+  description = "Map of AWS availability zones (key) to subnet CIDR (value) assignments"
+
+  default = {
+    us-east-1a = "192.168.100.32/27"
+    us-east-1b = "192.168.100.64/27"
+    us-east-1c = "192.168.100.96/27"
+  }
+}
 

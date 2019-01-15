@@ -9,7 +9,7 @@ resource "aws_vpc" "vpc" {
 
   tags = "${
     map(
-     "Name", "${var.environment}-${var.cluster-name}-vpc",
+     "Name", "${var.environment}-${var.cluster_name}-vpc",
     )
   }"
 }
@@ -25,7 +25,7 @@ resource "aws_subnet" "public_subnets" {
   map_public_ip_on_launch = true
   tags = "${
     map(
-     "Name", "${var.environment}-${var.cluster-name}-public-${count.index}"
+     "Name", "${var.environment}-${var.cluster_name}-public-${count.index}"
     )
   }"
 }
@@ -38,7 +38,7 @@ resource "aws_subnet" "private_subnets" {
   map_public_ip_on_launch = false
   tags = "${
     map(
-     "Name", "${var.environment}-${var.cluster-name}-private-${count.index}",
+     "Name", "${var.environment}-${var.cluster_name}-private-${count.index}",
     )
   }"
 
@@ -51,7 +51,7 @@ resource "aws_internet_gateway" "igw" {
   vpc_id = "${aws_vpc.vpc.id}"
 
   tags {
-    Name = "${var.environment}-${var.cluster-name}-igw"
+    Name = "${var.environment}-${var.cluster_name}-igw"
   }
 }
 
@@ -85,7 +85,7 @@ resource "aws_route_table" "private" {
   }
 
   tags {
-    Name = "${var.environment}-${var.cluster-name}-private"
+    Name = "${var.environment}-${var.cluster_name}-private"
   }
 }
 
