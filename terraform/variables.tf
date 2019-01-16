@@ -19,3 +19,7 @@ variable "public_subnets" {
 variable "private_subnets" {
    type = "map"
 }
+
+variable "rds_subnets" {
+  type = "map"
+}

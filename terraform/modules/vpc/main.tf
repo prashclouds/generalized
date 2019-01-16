@@ -41,7 +41,31 @@ resource "aws_subnet" "private_subnets" {
      "Name", "${var.environment}-${var.cluster_name}-private-${count.index}",
     )
   }"
+}
 
+resource "aws_subnet" "private_rds_subnets" {
+  count                   = "${length(keys(var.rds_subnets))}"
+  vpc_id                  = "${aws_vpc.vpc.id}"
+  availability_zone       = "${element(keys(var.rds_subnets), count.index)}"
+  cidr_block              = "${element(values(var.rds_subnets), count.index)}"
+  map_public_ip_on_launch = false
+  tags = "${
+    map(
+     "Name", "${var.environment}-${var.cluster_name}-private-rds-${count.index}",
+    )
+  }"
+}
+
+#
+# AWS Subnet Group for RDS
+#
+resource "aws_db_subnet_group" "rds_subnet_group" {
+  name       = "${var.environment}-${var.cluster_name}-rds-subnet-group"
+  subnet_ids = ["${aws_subnet.private_rds_subnets.*.id}"]
+
+  tags = {
+    Name = "${var.environment}-${var.cluster_name}-rds-subnet-group"
+  }
 }
 
 #
@@ -78,12 +102,10 @@ resource "aws_route" "public_gateway" {
 
 resource "aws_route_table" "private" {
   vpc_id = "${aws_vpc.vpc.id}"
-
   route {
     cidr_block     = "0.0.0.0/0"
     nat_gateway_id = "${aws_nat_gateway.nat_gw.id}"
   }
-
   tags {
     Name = "${var.environment}-${var.cluster_name}-private"
   }
@@ -92,6 +114,12 @@ resource "aws_route_table" "private" {
 resource "aws_route_table_association" "private_subnet" {
   count          = "${length(keys(var.private_subnets))}"
   subnet_id      = "${element(aws_subnet.private_subnets.*.id, count.index)}"
+  route_table_id = "${aws_route_table.private.id}"
+}
+
+resource "aws_route_table_association" "rds_subnet" {
+  count          = "${length(keys(var.rds_subnets))}"
+  subnet_id      = "${element(aws_subnet.private_rds_subnets.*.id, count.index)}"
   route_table_id = "${aws_route_table.private.id}"
 }
 

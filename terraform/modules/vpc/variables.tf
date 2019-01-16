@@ -42,7 +42,16 @@ variable "private_subnets" {
   default = {
     us-east-1a = "192.168.100.32/27"
     us-east-1b = "192.168.100.64/27"
-    us-east-1c = "192.168.100.96/27"
+    
   }
 }
 
+variable "rds_subnets" {
+  type        = "map"
+  description = "Map of AWS availability zones (key) to subnet CIDR (value) assignments for RDS"
+
+  default = {
+    us-east-1a = "192.168.100.96/27"
+    us-east-1b = "192.168.100.128/27"
+  }
+}

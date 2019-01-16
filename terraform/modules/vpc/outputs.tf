@@ -13,3 +13,8 @@ output "private_subnets_ids" {
     "${aws_subnet.private_subnets.*.id}",
   ]
 }
+
+
+output "rds_subnet_group" {
+  value = "${aws_db_subnet_group.rds_subnet_group.id}"
+}

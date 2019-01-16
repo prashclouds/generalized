@@ -11,4 +11,5 @@ module "vpc" {
   cluster_name = "${var.cluster_name}"
   public_subnets = "${var.public_subnets}"
   private_subnets = "${var.private_subnets}"
+  rds_subnets = "${var.rds_subnets}"
 }
