@@ -1,8 +1,3 @@
-variable "region" {
-  type = "string"
-  description = "aws region"
-  default = "us-east-1"
-}
 variable "vpc" {
   type        = "map"
   description = "Map of AWS VPC settings"
