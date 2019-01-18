@@ -31,7 +31,6 @@ variable "rds_subnets" {
 }
 
 ### EKS MODULE
-variable "worker-instance-type" {}
-variable "worker-desired-size" {}
-variable "worker-min-size" {}
-variable "worker-max-size" {}
+variable "worker" {
+  type = "map"
+}

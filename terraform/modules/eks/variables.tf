@@ -14,24 +14,15 @@ variable "k8s_version" {
   description = "k8s version"
   default = "1.11"
 }
-variable "worker-instance-type" {
-  type    = "string"
-  default = "t3.large"
-}
-
-variable "worker-desired-size" {
-  type    = "string"
-  default = "4"
-}
-
-variable "worker-max-size" {
-  type    = "string"
-  default = "8"
-}
-
-variable "worker-min-size" {
-  type    = "string"
-  default = "4"
+variable "worker" {
+  type    = "map"
+  description = "Map of EKS workers settings"
+  default = {
+    instance-type = "t3.xlarge"
+    desired-size  = "2"
+    min-size      = "2"
+    max-size      = "4"
+  }
 }
 
 variable "datadog_key" {
