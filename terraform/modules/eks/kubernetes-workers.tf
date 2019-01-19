@@ -137,7 +137,7 @@ resource "aws_launch_configuration" "worker-node" {
   associate_public_ip_address = true
   iam_instance_profile        = "${aws_iam_instance_profile.eks-worker-instance-profile.name}"
   image_id                    = "${data.aws_ami.eks-worker.id}"
-  instance_type               = "${var.worker.instance-type}"
+  instance_type               = "${var.worker["instance-type"]}"
   name_prefix                 = "eks-worker-${aws_eks_cluster.k8s.name}"
   security_groups             = ["${aws_security_group.k8s-worker-security-group.id}"]
   user_data_base64            = "${base64encode(local.worker-node-userdata)}"
@@ -148,10 +148,10 @@ resource "aws_launch_configuration" "worker-node" {
 
 # Create an AutoScaling Group that actually launches EC2 instances based on the AutoScaling Launch Configuration.
 resource "aws_autoscaling_group" "k8s-worker-auto-scale" {
-  desired_capacity     = "${var.worker.desired-size}"
+  desired_capacity     = "${var.worker["desired-size"]}"
   launch_configuration = "${aws_launch_configuration.worker-node.id}"
-  max_size             = "${var.worker.max-size}"
-  min_size             = "${var.worker.min-size}"
+  max_size             = "${var.worker["max-size"]}"
+  min_size             = "${var.worker["min-size"]}"
   name                 = "eks-auto-scaling-group-${aws_eks_cluster.k8s.name}"
   vpc_zone_identifier  = ["${var.private_subnets}"]
 

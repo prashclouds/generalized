@@ -56,17 +56,6 @@ resource "aws_subnet" "private_rds_subnets" {
   }"
 }
 
-#
-# AWS Subnet Group for RDS
-#
-resource "aws_db_subnet_group" "rds_subnet_group" {
-  name       = "${var.environment}-${var.cluster_name}-rds-subnet-group"
-  subnet_ids = ["${aws_subnet.private_rds_subnets.*.id}"]
-
-  tags = {
-    Name = "${var.environment}-${var.cluster_name}-rds-subnet-group"
-  }
-}
 
 #
 # AWS IGW setup
