@@ -6,9 +6,9 @@ resource "aws_db_instance" "db" {
   engine                    = "${element(split(",",element(values(var.database), count.index)), 2)}"
   engine_version            = "${element(split(",",element(values(var.database), count.index)), 3)}"
   instance_class            = "${element(split(",",element(values(var.database), count.index)), 4)}"
-  username                  = "${element(split(",",element(values(var.database), count.index)), 5)}"
-  password                  = "${element(split(",",element(values(var.database), count.index)), 6)}"
-  storage_encrypted         = true
+  username                  = "${element(split(",",element(values(var.database), count.index)), 7)}"
+  password                  = "${element(split(",",element(values(var.database), count.index)), 8)}"
+  storage_encrypted         = "${element(split(",",element(values(var.database), count.index)), 5)}"
   vpc_security_group_ids    = ["${aws_security_group.rds.id}"]
   db_subnet_group_name      = "${aws_db_subnet_group.rds_subnet_group.name}"
   backup_retention_period   = 1

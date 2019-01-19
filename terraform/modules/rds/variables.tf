@@ -2,9 +2,9 @@ variable "database" {
   type        = "map"
   description = "Database settings"
   default = {
-    db1 = "10,gp2,mysql,8.0.11,db.t2.micro,true,1,abc123**,user"
-    db2 = "10,gp2,mysql,8.0.11,db.t2.micro,true,1,abc123**,user"
-    db3 = "10,gp2,mysql,8.0.11,db.t2.micro,true,1,abc123**,user"
+    db1 = "10,gp2,mysql,8.0.11,db.t2.micro,false,1,user,abc123**"
+  #  db2 = "10,gp2,mysql,8.0.11,db.t2.micro,false,1,user,abc123**"
+    db3 = "10,gp2,mysql,8.0.11,db.t2.micro,false,1,user,abc123**"
   }
   # default = [{
   #     identifier              = "test"
