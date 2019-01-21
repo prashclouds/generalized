@@ -1,5 +1,5 @@
 variable "databases" {
-  type        = "map"
+  type        = "list"
   description = "Database settings"
   default = [{
       identifier              = "test"
@@ -8,6 +8,7 @@ variable "databases" {
       engine                  = "mysql"
       engine_version          = "8.0.11"
       instance_class          = "db.t2.medium"
+      multi_az                = false
       storage_encrypted       = true
       backup_retention_period = 1
       password                = "abc123**"
@@ -20,6 +21,7 @@ variable "databases" {
       engine                  = "mysql"
       engine_version          = "8.0.11"
       instance_class          = "db.t2.medium"
+      multi_az                = false
       storage_encrypted       = true
       backup_retention_period = 1
       password                = "abc123**"

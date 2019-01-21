@@ -1,18 +1,19 @@
 resource "aws_db_instance" "db" {
-  count                     = "${length(keys(var.databases))}"
-  identifier                = "${element(keys(var.databases), count.index)}-${var.cluster_name}-${var.environment}"
-  allocated_storage         = "${element(split(",",element(values(var.databases), count.index)), 0)}"
-  storage_type              = "${element(split(",",element(values(var.databases), count.index)), 1)}"
-  engine                    = "${element(split(",",element(values(var.databases), count.index)), 2)}"
-  engine_version            = "${element(split(",",element(values(var.databases), count.index)), 3)}"
-  instance_class            = "${element(split(",",element(values(var.databases), count.index)), 4)}"
-  username                  = "${element(split(",",element(values(var.databases), count.index)), 7)}"
-  password                  = "${element(split(",",element(values(var.databases), count.index)), 8)}"
-  storage_encrypted         = "${element(split(",",element(values(var.databases), count.index)), 5)}"
+  count                     = "${length(var.databases)}"
+  identifier                = "${lookup(var.databases[count.index],"identifier")}-${var.cluster_name}-${var.environment}"
+  allocated_storage         = "${lookup(var.databases[count.index],"allocated_storage")}"
+  storage_type              = "${lookup(var.databases[count.index],"storage_type")}"
+  engine                    = "${lookup(var.databases[count.index],"engine")}"
+  engine_version            = "${lookup(var.databases[count.index],"engine_version")}"
+  instance_class            = "${lookup(var.databases[count.index],"instance_class")}"
+  multi_az                  = "${lookup(var.databases[count.index],"multi_az")}"
+  username                  = "${lookup(var.databases[count.index],"username")}"
+  password                  = "${lookup(var.databases[count.index],"password")}"
+  storage_encrypted         = "${lookup(var.databases[count.index],"storage_encrypted")}"
   vpc_security_group_ids    = ["${aws_security_group.rds.id}"]
   db_subnet_group_name      = "${aws_db_subnet_group.rds_subnet_group.name}"
-  backup_retention_period   = 1
-  final_snapshot_identifier = "${element(keys(var.databases), count.index)}-${var.cluster_name}-${var.environment}-${uuid()}-latest"
+  backup_retention_period   = "${lookup(var.databases[count.index],"backup_retention_period")}"
+  final_snapshot_identifier = "${lookup(var.databases[count.index],"identifier")}-${var.cluster_name}-${var.environment}-${uuid()}-latest"
 }
 
 

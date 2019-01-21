@@ -7,7 +7,7 @@ variable "region" {
 variable "datadog_key" {
   type = "string"
   description = "API Key of the datadog agent"
-  default = "d0c5d5cd22b4ef22bc0b92f4a63f0bc5"
+  default = "test"
 }
 
 variable "environment" {}
