@@ -1,18 +1,18 @@
 resource "aws_db_instance" "db" {
-  count                     = "${length(keys(var.database))}"
-  identifier                = "${element(keys(var.database), count.index)}-${var.cluster_name}-${var.environment}"
-  allocated_storage         = "${element(split(",",element(values(var.database), count.index)), 0)}"
-  storage_type              = "${element(split(",",element(values(var.database), count.index)), 1)}"
-  engine                    = "${element(split(",",element(values(var.database), count.index)), 2)}"
-  engine_version            = "${element(split(",",element(values(var.database), count.index)), 3)}"
-  instance_class            = "${element(split(",",element(values(var.database), count.index)), 4)}"
-  username                  = "${element(split(",",element(values(var.database), count.index)), 7)}"
-  password                  = "${element(split(",",element(values(var.database), count.index)), 8)}"
-  storage_encrypted         = "${element(split(",",element(values(var.database), count.index)), 5)}"
+  count                     = "${length(keys(var.databases))}"
+  identifier                = "${element(keys(var.databases), count.index)}-${var.cluster_name}-${var.environment}"
+  allocated_storage         = "${element(split(",",element(values(var.databases), count.index)), 0)}"
+  storage_type              = "${element(split(",",element(values(var.databases), count.index)), 1)}"
+  engine                    = "${element(split(",",element(values(var.databases), count.index)), 2)}"
+  engine_version            = "${element(split(",",element(values(var.databases), count.index)), 3)}"
+  instance_class            = "${element(split(",",element(values(var.databases), count.index)), 4)}"
+  username                  = "${element(split(",",element(values(var.databases), count.index)), 7)}"
+  password                  = "${element(split(",",element(values(var.databases), count.index)), 8)}"
+  storage_encrypted         = "${element(split(",",element(values(var.databases), count.index)), 5)}"
   vpc_security_group_ids    = ["${aws_security_group.rds.id}"]
   db_subnet_group_name      = "${aws_db_subnet_group.rds_subnet_group.name}"
   backup_retention_period   = 1
-  final_snapshot_identifier = "${element(keys(var.database), count.index)}-${var.cluster_name}-${var.environment}-latest"
+  final_snapshot_identifier = "${element(keys(var.databases), count.index)}-${var.cluster_name}-${var.environment}-${uuid()}-latest"
 }
 
 

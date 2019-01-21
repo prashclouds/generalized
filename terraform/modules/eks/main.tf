@@ -117,7 +117,7 @@ users:
         - "-i"
         - "${var.cluster_name}-${var.environment}"
         - "-r"
-        - "arn:aws:iam::619993530046:role/UnitQEKSUser"
+        - "${var.roleARN}"
 KUBECONFIG
 }
 
