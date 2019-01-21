@@ -15,7 +15,7 @@ module "eks" {
   worker          = "${var.worker}"
   vpc_id          = "${module.vpc.vpc_id}"
   private_subnets = "${module.vpc.private_subnets_ids}"
-  datadog_key     = "${var.datadog_key}"
+  datadog_key     = "${data.aws_ssm_parameter.datadog_key.value}"
 }
 
 module "rds" {

@@ -4,12 +4,11 @@ variable "region" {
   default = "us-east-1"
 }
 
-variable "datadog_key" {
+variable "param_prefix" {
   type = "string"
-  description = "API Key of the datadog agent"
-  default = "test"
+  description = "Prefix of parameter store where the secrets will be retrieved"
+  default = "/unitq"
 }
-
 variable "environment" {}
 variable "cluster_name" {}
 
