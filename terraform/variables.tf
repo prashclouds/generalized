@@ -1,7 +1,6 @@
 variable "region" {
   type = "string"
   description = "aws region"
-  default = "us-east-1"
 }
 
 variable "param_prefix" {
@@ -30,6 +29,7 @@ variable "rds_subnets" {
 }
 
 ### EKS MODULE
+variable "roleARN" {}
 variable "worker" {
   type = "map"
 }

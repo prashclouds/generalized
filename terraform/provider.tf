@@ -3,7 +3,7 @@ terraform {
   backend "s3"{}
 }
 provider "aws" {
-	 version = "~> 1.40"
+	 version = "~> 1.56"
 	 region = "${var.region}"
 }
 provider "http" {
