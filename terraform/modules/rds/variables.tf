@@ -12,7 +12,7 @@ variable "databases" {
       storage_encrypted       = true
       backup_retention_period = 1
       password                = "abc123**"
-      username                = "user"      
+      username                = "user"
     },
     {
       identifier              = "test3"
@@ -25,7 +25,7 @@ variable "databases" {
       storage_encrypted       = true
       backup_retention_period = 1
       password                = "abc123**"
-      username                = "user"      
+      username                = "user"
     }
   ]
 }

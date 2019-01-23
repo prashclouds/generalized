@@ -24,5 +24,13 @@ module "rds" {
   environment         = "${var.environment}"
   cluster_name        = "${var.cluster_name}"
   vpc_id              = "${module.vpc.vpc_id}"
-  private_subnet_ids = "${module.vpc.rds_subnets_ids}"
+  private_subnet_ids  = "${module.vpc.rds_subnets_ids}"
+}
+
+module "kinesis" {
+  source              = "modules/kinesis"
+  environment         = "${var.environment}"
+  project_name        = "${var.project_name}"
+  stream_name         = "${var.stream_name}"
+  shard_count         = "${var.shard_count}"
 }

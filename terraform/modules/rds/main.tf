@@ -1,25 +1,16 @@
-resource "aws_db_instance" "db" {
-  count                     = "${length(var.databases)}"
-  identifier                = "${lookup(var.databases[count.index],"identifier")}-${var.cluster_name}-${var.environment}"
-  allocated_storage         = "${lookup(var.databases[count.index],"allocated_storage")}"
-  storage_type              = "${lookup(var.databases[count.index],"storage_type")}"
-  engine                    = "${lookup(var.databases[count.index],"engine")}"
-  engine_version            = "${lookup(var.databases[count.index],"engine_version")}"
-  instance_class            = "${lookup(var.databases[count.index],"instance_class")}"
-  multi_az                  = "${lookup(var.databases[count.index],"multi_az")}"
-  username                  = "${lookup(var.databases[count.index],"username")}"
-  password                  = "${lookup(var.databases[count.index],"password")}"
-  storage_encrypted         = "${lookup(var.databases[count.index],"storage_encrypted")}"
-  vpc_security_group_ids    = ["${aws_security_group.rds.id}"]
-  db_subnet_group_name      = "${aws_db_subnet_group.rds_subnet_group.name}"
-  backup_retention_period   = "${lookup(var.databases[count.index],"backup_retention_period")}"
-  final_snapshot_identifier = "${lookup(var.databases[count.index],"identifier")}-${var.cluster_name}-${var.environment}-${uuid()}-latest"
+module "databases" {
+  # source = "environment/prod/databases.tf"
+  source = "environment"
+  db_subnet_group = "${aws_db_subnet_group.rds_subnet_group.name}"
+  db_security_groups_id = "${aws_security_group.rds.id}"
+  environment = "${var.environment}"
+  cluster_name = "${var.cluster_name}"
 }
-
 
 #
 # AWS Subnet Group for RDS
 #
+
 resource "aws_db_subnet_group" "rds_subnet_group" {
   name       = "${var.environment}-${var.cluster_name}-rds-subnet-group"
   subnet_ids = ["${var.private_subnet_ids}"]
@@ -48,5 +39,3 @@ resource "aws_security_group" "rds" {
     Environment = "${var.environment}"
   }
 }
-
-

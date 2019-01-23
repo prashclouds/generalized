@@ -9,7 +9,13 @@ variable "param_prefix" {
   default = "/unitq"
 }
 variable "environment" {}
+#EKS cluster name
 variable "cluster_name" {}
+
+#kinesis stream name
+variable "stream_name" {}
+variable "project_name" {}
+variable "shard_count" {}
 
 ### VPC MODULE
 variable "vpc" {
