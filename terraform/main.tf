@@ -30,9 +30,8 @@ module "rds" {
 module "kinesis" {
   source              = "modules/kinesis"
   environment         = "${var.environment}"
-  project_name        = "${var.project_name}"
-  stream_name         = "${var.stream_name}"
   shard_count         = "${var.shard_count}"
+  retention_period    = "${var.retention_period}"
 }
 
 module "iam" {
