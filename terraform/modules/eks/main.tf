@@ -4,7 +4,6 @@
 # create an IAM role that will be used by the K8s master
 resource "aws_iam_role" "eks_master_role" {
   name = "eks_master_role_k8s_${var.cluster_name}_${var.environment}"
-
   assume_role_policy = <<POLICY
 {
   "Version": "2012-10-17",
@@ -12,7 +11,7 @@ resource "aws_iam_role" "eks_master_role" {
     {
       "Effect": "Allow",
       "Principal": {
-        "Service": "eks.amazonaws.com"
+        "Service": "ec2.amazonaws.com"
       },
       "Action": "sts:AssumeRole"
     }
@@ -25,11 +24,13 @@ POLICY
 resource "aws_iam_role_policy_attachment" "eks-AmazonEKSClusterPolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
   role       = "${aws_iam_role.eks_master_role.name}"
+  depends_on = ["aws_iam_role.eks_master_role"]
 }
 
 resource "aws_iam_role_policy_attachment" "eks-AmazonEKSServicePolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
   role       = "${aws_iam_role.eks_master_role.name}"
+  depends_on = ["aws_iam_role.eks_master_role"]
 }
 
 # security group for the master nodes
@@ -82,6 +83,7 @@ resource "aws_eks_cluster" "k8s" {
     subnet_ids         = ["${var.private_subnets}"]
   }
   depends_on = [
+    "aws_security_group.k8s_master_security_group",
     "aws_iam_role_policy_attachment.eks-AmazonEKSClusterPolicy",
     "aws_iam_role_policy_attachment.eks-AmazonEKSServicePolicy",
   ]

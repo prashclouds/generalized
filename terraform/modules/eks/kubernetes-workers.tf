@@ -149,6 +149,7 @@ resource "aws_launch_configuration" "worker_node" {
   lifecycle {
     create_before_destroy = true
   }
+  depends_on = ["aws_security_group.k8s_worker_security_group"]
 }
 
 # Create an AutoScaling Group that actually launches EC2 instances based on the AutoScaling Launch Configuration.
@@ -159,7 +160,7 @@ resource "aws_autoscaling_group" "k8s-worker-auto-scale" {
   min_size             = "${var.worker["min-size"]}"
   name                 = "eks_auto_scaling_group_${aws_eks_cluster.k8s.name}"
   vpc_zone_identifier  = ["${var.private_subnets}"]
-
+  depends_on           = ["aws_launch_configuration.worker_node"]
   tag {
     key                 = "Name"
     value               = "worker_${aws_eks_cluster.k8s.name}"
@@ -174,7 +175,7 @@ resource "aws_autoscaling_group" "k8s-worker-auto-scale" {
 }
 
 locals {
-  config-map-aws-auth = <<CONFIGMAPAWSAUTH
+  config_map_aws_auth = <<CONFIGMAPAWSAUTH
 
 
 apiVersion: v1
