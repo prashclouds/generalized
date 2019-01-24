@@ -7,7 +7,7 @@ resource "aws_db_instance" "db_qa" {
   engine_version          = "8.0.11",
   instance_class          = "db.t2.micro",
   multi_az                = false,
-  storage_encrypted       = true,
+  storage_encrypted       = false,
   backup_retention_period = 1,
   password                = "abc123**",
   username                = "user",

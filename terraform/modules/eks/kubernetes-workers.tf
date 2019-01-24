@@ -59,6 +59,11 @@ resource "aws_iam_role_policy" "worker-route53-role-policy" {
             "Effect": "Allow",
             "Action": "route53:ChangeResourceRecordSets",
             "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action":"sts:AssumeRole",
+            "Resource": "*"
         }
     ]
 }
@@ -184,8 +189,8 @@ data:
       groups:
         - system:bootstrappers
         - system:nodes
-    - rolearn: arn:aws:iam::619993530046:role/UnitQEKSUser 
+    - rolearn: ${var.roleARN}
       groups:
-        - system:masters        
+        - system:masters    
 CONFIGMAPAWSAUTH
 }

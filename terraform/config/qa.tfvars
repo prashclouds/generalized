@@ -1,6 +1,6 @@
-environment = "qa"
-cluster_name="unitq"
-region="us-east-1"
+environment   = "qa"
+cluster_name  = "unitq"
+region        = "us-east-1"
 
 ### VPC MODULE
 vpc= {
@@ -10,9 +10,9 @@ vpc= {
     tag           = "",
     tenancy       = "default",
   }
-public_subnets = {us-east-1a = "192.168.50.0/27"}
+public_subnets  = {us-east-1a = "192.168.50.0/27"}
 private_subnets = {us-east-1a = "192.168.50.32/27", us-east-1b = "192.168.50.64/27"}
-rds_subnets = {us-east-1a = "192.168.50.96/27", us-east-1b = "192.168.50.128/27"}
+rds_subnets     = {us-east-1a = "192.168.50.96/27", us-east-1b = "192.168.50.128/27"}
 
 ### EKS MODULE
 roleARN = "arn:aws:iam::619993530046:role/UnitQEKSUser"
@@ -24,6 +24,10 @@ worker= {
 }
 
 #### KINESIS Module
-project_name        = "kinesis_test"
-stream_name         = "stream_1"
-shard_count         = "48"
+project_name    = "kinesis_test"
+stream_name     = "stream_1"
+shard_count     = "48"
+
+### IAM Module
+searchservice_managed_policies =  ["AmazonS3FullAccess","AmazonESFullAccess","CloudWatchFullAccess"]
+mlservice_managed_policies     =  ["CloudWatchFullAccess","AmazonDynamoDBFullAccess"]

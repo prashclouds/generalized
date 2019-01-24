@@ -34,3 +34,10 @@ module "kinesis" {
   stream_name         = "${var.stream_name}"
   shard_count         = "${var.shard_count}"
 }
+
+module "iam" {
+  source                = "modules/iam"
+  environment           = "${var.environment}"
+  kinesis_arns          = "${module.kinesis.kinesis_arns}"
+  kubernetes_worker_arn = "${module.eks.kubernetes_worker_arn}"
+}
