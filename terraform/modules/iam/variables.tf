@@ -8,11 +8,6 @@ variable "kubernetes_worker_arn" {
   default=""
 }
 
-variable "kinesis_arns" {
-   type = "list"
-   default = ["*"]
-}
-
 variable "searchservice_managed_policies" {
   type = "list"
   description = "List of aws managed policies to associate to the role"
