@@ -2,8 +2,8 @@
 # all the necessary IAM roles required by K8s worker nodes
 
 # create an IAM role that will be used by the K8s worker
-resource "aws_iam_role" "eks-worker-role" {
-  name = "eks-worker-role-k8s-${aws_eks_cluster.k8s.name}"
+resource "aws_iam_role" "eks_worker_role" {
+  name = "eks_worker_role_k8s_${aws_eks_cluster.k8s.name}"
   assume_role_policy = <<POLICY
 {
   "Version": "2012-10-17",
@@ -23,24 +23,24 @@ POLICY
 # lets start assigning worker node policies to the role
 resource "aws_iam_role_policy_attachment" "eks-AmazonEKSWorkerNodePolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
-  role       = "${aws_iam_role.eks-worker-role.name}"
+  role       = "${aws_iam_role.eks_worker_role.name}"
 }
 
 resource "aws_iam_role_policy_attachment" "eks-AmazonEKS_CNI_Policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-  role       = "${aws_iam_role.eks-worker-role.name}"
+  role       = "${aws_iam_role.eks_worker_role.name}"
 }
 
 resource "aws_iam_role_policy_attachment" "eks-AmazonEC2ContainerRegistryReadOnly" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-  role       = "${aws_iam_role.eks-worker-role.name}"
+  role       = "${aws_iam_role.eks_worker_role.name}"
 }
 
 # adding the necessary policies for route53 kubernetes
 # @see https://github.com/wearemolecule/route53-kubernetes
 resource "aws_iam_role_policy" "worker-route53-role-policy" {
   name = "${aws_eks_cluster.k8s.name}-worker-route53-k8s-policy"
-  role = "${aws_iam_role.eks-worker-role.id}"
+  role = "${aws_iam_role.eks_worker_role.id}"
   policy = <<EOF
 {
     "Version": "2012-10-17",
@@ -71,12 +71,12 @@ EOF
 }
 
 resource "aws_iam_instance_profile" "eks-worker-instance-profile" {
-  name = "eks-instance-profile-${aws_eks_cluster.k8s.name}"
-  role = "${aws_iam_role.eks-worker-role.name}"
+  name = "eks_instance_profile_${aws_eks_cluster.k8s.name}"
+  role = "${aws_iam_role.eks_worker_role.name}"
 }
 
-resource "aws_security_group" "k8s-worker-security-group" {
-  name        = "k8s-worker-sg-${aws_eks_cluster.k8s.name}"
+resource "aws_security_group" "k8s_worker_security_group" {
+  name        = "k8s_worker_sg_${aws_eks_cluster.k8s.name}"
   description = "Security group for all nodes in the cluster"
   vpc_id      = "${var.vpc_id}"
 
@@ -98,8 +98,8 @@ resource "aws_security_group_rule" "k8s-worker-ingress-self" {
   description              = "Allow node to communicate with each other"
   from_port                = 0
   protocol                 = "-1"
-  security_group_id        = "${aws_security_group.k8s-worker-security-group.id}"
-  source_security_group_id = "${aws_security_group.k8s-worker-security-group.id}"
+  security_group_id        = "${aws_security_group.k8s_worker_security_group.id}"
+  source_security_group_id = "${aws_security_group.k8s_worker_security_group.id}"
   to_port                  = 65535
   type                     = "ingress"
 }
@@ -138,13 +138,13 @@ USERDATA
 }
 
 # AutoScaling Launch Configuration that uses all our prerequisite resources to define how to create EC2 instances using them.
-resource "aws_launch_configuration" "worker-node" {
+resource "aws_launch_configuration" "worker_node" {
   associate_public_ip_address = true
   iam_instance_profile        = "${aws_iam_instance_profile.eks-worker-instance-profile.name}"
   image_id                    = "${data.aws_ami.eks-worker.id}"
   instance_type               = "${var.worker["instance-type"]}"
-  name_prefix                 = "eks-worker-${aws_eks_cluster.k8s.name}"
-  security_groups             = ["${aws_security_group.k8s-worker-security-group.id}"]
+  name_prefix                 = "eks_worker_${aws_eks_cluster.k8s.name}"
+  security_groups             = ["${aws_security_group.k8s_worker_security_group.id}"]
   user_data_base64            = "${base64encode(local.worker-node-userdata)}"
   lifecycle {
     create_before_destroy = true
@@ -154,15 +154,15 @@ resource "aws_launch_configuration" "worker-node" {
 # Create an AutoScaling Group that actually launches EC2 instances based on the AutoScaling Launch Configuration.
 resource "aws_autoscaling_group" "k8s-worker-auto-scale" {
   desired_capacity     = "${var.worker["desired-size"]}"
-  launch_configuration = "${aws_launch_configuration.worker-node.id}"
+  launch_configuration = "${aws_launch_configuration.worker_node.id}"
   max_size             = "${var.worker["max-size"]}"
   min_size             = "${var.worker["min-size"]}"
-  name                 = "eks-auto-scaling-group-${aws_eks_cluster.k8s.name}"
+  name                 = "eks_auto_scaling_group_${aws_eks_cluster.k8s.name}"
   vpc_zone_identifier  = ["${var.private_subnets}"]
 
   tag {
     key                 = "Name"
-    value               = "worker-${aws_eks_cluster.k8s.name}"
+    value               = "worker_${aws_eks_cluster.k8s.name}"
     propagate_at_launch = true
   }
 
@@ -184,7 +184,7 @@ metadata:
   namespace: kube-system
 data:
   mapRoles: |
-    - rolearn: ${aws_iam_role.eks-worker-role.arn}
+    - rolearn: ${aws_iam_role.eks_worker_role.arn}
       username: system:node:{{EC2PrivateDNSName}}
       groups:
         - system:bootstrappers

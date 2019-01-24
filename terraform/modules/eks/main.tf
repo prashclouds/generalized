@@ -2,8 +2,8 @@
 # all the necessary IAM roles required by K8s master nodes
 
 # create an IAM role that will be used by the K8s master
-resource "aws_iam_role" "eks-master-role" {
-  name = "eks-master-role-k8s-${var.cluster_name}-${var.environment}"
+resource "aws_iam_role" "eks_master_role" {
+  name = "eks_master_role_k8s_${var.cluster_name}_${var.environment}"
 
   assume_role_policy = <<POLICY
 {
@@ -24,16 +24,16 @@ POLICY
 # lets attach all the policies that K8s master nodes needs to manage all aws resources
 resource "aws_iam_role_policy_attachment" "eks-AmazonEKSClusterPolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-  role       = "${aws_iam_role.eks-master-role.name}"
+  role       = "${aws_iam_role.eks_master_role.name}"
 }
 
 resource "aws_iam_role_policy_attachment" "eks-AmazonEKSServicePolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
-  role       = "${aws_iam_role.eks-master-role.name}"
+  role       = "${aws_iam_role.eks_master_role.name}"
 }
 
 # security group for the master nodes
-resource "aws_security_group" "k8s-master-security-group" {
+resource "aws_security_group" "k8s_master_security_group" {
   name        = "k8s-master-sg-${var.cluster_name}-${var.environment}"
   description = "Allows K8s Master communication to the worker nodes"
   vpc_id      = "${var.vpc_id}"
@@ -52,12 +52,12 @@ resource "aws_security_group" "k8s-master-security-group" {
   }
 }
 
-resource "aws_security_group_rule" "k8s-worker-ingress-master" {
+resource "aws_security_group_rule" "k8s_worker_ingress_master" {
   description              = "Allow worker Kubelets and pods to receive communication from the master control plane"
   from_port                = 1025
   protocol                 = "tcp"
-  security_group_id        = "${aws_security_group.k8s-worker-security-group.id}"
-  source_security_group_id = "${aws_security_group.k8s-master-security-group.id}"
+  security_group_id        = "${aws_security_group.k8s_worker_security_group.id}"
+  source_security_group_id = "${aws_security_group.k8s_master_security_group.id}"
   to_port                  = 65535
   type                     = "ingress"
 }
@@ -66,20 +66,19 @@ resource "aws_security_group_rule" "k8s-master-ingress-worker" {
   description              = "Allow workers to communicate with the cluster API Server"
   from_port                = 443
   protocol                 = "tcp"
-  security_group_id        = "${aws_security_group.k8s-master-security-group.id}"
-  source_security_group_id = "${aws_security_group.k8s-worker-security-group.id}"
+  security_group_id        = "${aws_security_group.k8s_master_security_group.id}"
+  source_security_group_id = "${aws_security_group.k8s_worker_security_group.id}"
   to_port                  = 443
   type                     = "ingress"
 }
 
 
-
 resource "aws_eks_cluster" "k8s" {
-  name     = "${var.cluster_name}-${var.environment}"
-  role_arn = "${aws_iam_role.eks-master-role.arn}"
+  name     = "${var.cluster_name}_${var.environment}"
+  role_arn = "${aws_iam_role.eks_master_role.arn}"
   version  = "${var.k8s_version}"
   vpc_config {
-    security_group_ids = ["${aws_security_group.k8s-master-security-group.id}"]
+    security_group_ids = ["${aws_security_group.k8s_master_security_group.id}"]
     subnet_ids         = ["${var.private_subnets}"]
   }
   depends_on = [
@@ -115,14 +114,14 @@ users:
       args:
         - "token"
         - "-i"
-        - "${var.cluster_name}-${var.environment}"
+        - "${aws_eks_cluster.k8s.name}"
         - "-r"
         - "${var.roleARN}"
 KUBECONFIG
 }
 
 locals {
-  kubeconfig-admin = <<KUBECONFIG
+  kubeconfig_admin = <<KUBECONFIG
 
 
 apiVersion: v1
@@ -148,6 +147,6 @@ users:
       args:
         - "token"
         - "-i"
-        - "${var.cluster_name}-${var.environment}"
+        - "${aws_eks_cluster.k8s.name}"
 KUBECONFIG
 }

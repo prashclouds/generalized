@@ -10,6 +10,7 @@ variable "kubernetes_worker_arn" {
 
 variable "kinesis_arns" {
    type = "list"
+   default = ["*"]
 }
 
 variable "searchservice_managed_policies" {
