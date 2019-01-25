@@ -1,7 +1,7 @@
 module "es_clusters" {
   # source = "environment/prod/databases.tf"
   source = "environment"
-  private_subnet_ids = "${var.private_subnets}"
+  private_subnets = "${var.private_subnets}"
   es_security_groups_id = "${aws_security_group.es_sg.id}"
   environment = "${var.environment}"
   cluster_name = "${var.cluster_name}"
