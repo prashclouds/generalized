@@ -5,5 +5,5 @@ module "vpc" {
   cluster_name    = "${var.cluster_name}"
   public_subnets  = "${local.public_subnets}"
   private_subnets = "${local.private_subnets}"
-  vpcs_to_connect = "${var.vpcs_to_connect}"
+  vpcs_to_connect = "${local.vpcs_to_connect}"
 }
