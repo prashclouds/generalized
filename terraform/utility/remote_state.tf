@@ -4,7 +4,7 @@ data "terraform_remote_state" "qa" {
   backend = "s3"
   config ={
     bucket  = "unitq-terraform-development"
-    key     = "backend-prod.tfstate"
+    key     = "backend-qa.tfstate"
     encrypt = true
     region  = "us-east-1"
     dynamodb_table = "terraform-lock"
@@ -15,7 +15,7 @@ data "terraform_remote_state" "prod" {
   backend = "s3"
   config ={
     bucket  = "unitq-terraform-development"
-    key     = "backend-qa.tfstate"
+    key     = "backend-prod.tfstate"
     encrypt = true
     region  = "us-east-1"
     dynamodb_table = "terraform-lock"
