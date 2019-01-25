@@ -23,11 +23,14 @@ worker= {
   max-size      = "4"
 }
 
-#### KINESIS Module
-project_name    = "kinesis_test"
-stream_name     = "stream_1"
-shard_count     = "48"
+#### ELASTICSEARCH MODULE
 
-### IAM Module
+#### KINESIS MODULE
+project_name     = "kinesis_test"
+stream_name      = "stream_1"
+shard_count      = "48"
+retention_period = "24"
+
+### IAM MODULE
 searchservice_managed_policies =  ["AmazonS3FullAccess","AmazonESFullAccess","CloudWatchFullAccess"]
 mlservice_managed_policies     =  ["CloudWatchFullAccess","AmazonDynamoDBFullAccess"]

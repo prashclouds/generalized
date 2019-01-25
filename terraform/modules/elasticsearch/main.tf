@@ -12,7 +12,7 @@ module "es_clusters" {
 resource "aws_security_group" "es_sg" {
   name = "${var.environment}-${var.cluster_name}-es-sg"
   description = "Allow inbound traffic to ElasticSearch from VPC CIDR"
-  vpc_id = "${var.vpc}"
+  vpc_id = "${var.vpc_id}"
   ingress {
       from_port = 0
       to_port = 0
