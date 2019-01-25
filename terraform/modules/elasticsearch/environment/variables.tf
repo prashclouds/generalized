@@ -1,5 +1,5 @@
 variable "private_subnets" {
-  type    = "list"
+  type = "list"
 }
 variable "es_security_groups_id" {}
 variable "environment" {}

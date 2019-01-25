@@ -3,13 +3,13 @@
 resource "aws_elasticsearch_domain" "qa_es" {
   count = "${var.environment == "qa" ? 1 : 0}"
   domain_name = "dominio2"
-  elasticsearch_version = "6.3"
+  elasticsearch_version = "6.4"
   cluster_config {
-      instance_type = "r4.large.elasticsearch"
+      instance_type = "m4.large.elasticsearch"
       instance_count                 = 1
   }
   vpc_options {
-      subnet_ids = ["${var.private_subnets}"]
+      subnet_ids = ["${var.private_subnets[0]}"]
       security_group_ids = ["${var.es_security_groups_id}"]
   }
   ebs_options {
