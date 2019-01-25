@@ -28,7 +28,6 @@ variable "vpc" {
     tenancy       = "default"
   }
 }
-
 locals{
   public_subnets {
     "${var.region}a" = "192.168.100.0/27"
@@ -37,4 +36,9 @@ locals{
   private_subnets ={
     "${var.region}a" = "192.168.100.64/27"
   }
+}
+variable "vpcs_to_connect" {
+  type = "list"
+  description = "Id of the vpcs to create the peering connection"
+  default = ["vpc-0367c808972fb7c14"]
 }
