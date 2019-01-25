@@ -7,3 +7,10 @@ module "vpc" {
   private_subnets = "${local.private_subnets}"
   vpcs_to_connect = "${local.vpcs_to_connect}"
 }
+
+module "openvpn" {
+  source = "openvpn"
+  vpc_id = "${module.vpc.id}"
+  subnet_id = "${module.public_subnets_ids.0}"
+  
+}
