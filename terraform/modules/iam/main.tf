@@ -43,7 +43,7 @@ data "aws_iam_policy_document" "mlservice_policy" {
       actions = [
           "kinesis:*",
       ]
-      resources = ["arn:aws:kinesis:${data.aws_region.name}:${data.aws_caller_identity.current.account_id}:stream/${var.environment}*"]
+      resources = ["arn:aws:kinesis:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stream/${var.environment}*"]
   }
 }
 
