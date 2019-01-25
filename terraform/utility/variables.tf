@@ -36,9 +36,6 @@ locals{
   private_subnets ={
     "${var.region}a" = "192.168.100.64/27"
   }
-}
-
-locals{
   vpcs_to_connect =["${data.terraform_remote_state.qa.vpc_id}"]
 }
 variable "vpcs_to_connect" {
