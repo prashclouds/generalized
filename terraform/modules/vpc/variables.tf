@@ -50,3 +50,9 @@ variable "rds_subnets" {
     us-east-1b = "192.168.100.128/27"
   }
 }
+
+variable "vpcs_to_connect" {
+  type = "list"
+  description = "Id of the vpcs to create the peering connection"
+  default = []
+}

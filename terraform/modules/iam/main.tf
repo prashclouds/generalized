@@ -43,7 +43,7 @@ data "aws_iam_policy_document" "mlservice_policy" {
       actions = [
           "kinesis:*",
       ]
-      resources = ["${var.kinesis_arns}"]
+      resources = ["arn:aws:kinesis:${data.aws_region.name}:${data.aws_caller_identity.current.account_id}:stream/${var.environment}*"]
   }
 }
 
@@ -79,3 +79,6 @@ resource "aws_iam_role_policy_attachment" "searchservice_aws_attachment" {
   role        = "${aws_iam_role.searchservice_role.name}"
   policy_arn  = "arn:aws:iam::aws:policy/${var.searchservice_managed_policies[count.index]}"
 }
+
+data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}

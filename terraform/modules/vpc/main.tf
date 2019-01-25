@@ -111,3 +111,26 @@ resource "aws_route_table_association" "rds_subnet" {
   route_table_id = "${aws_route_table.private.id}"
 }
 
+
+#
+# VPC Peering connections
+#
+
+resource "aws_vpc_peering_connection" "peering" {
+  count         = "${length(var.vpcs_to_connect)}"
+  peer_vpc_id   = "${aws_vpc.vpc.id}"
+  vpc_id        = "${var.vpcs_to_connect[count.index]}"
+  auto_accept   = true
+
+  accepter {
+    allow_remote_vpc_dns_resolution  = true
+    allow_classic_link_to_remote_vpc = true
+    allow_vpc_to_remote_classic_link = true
+  }
+
+  requester {
+    allow_remote_vpc_dns_resolution  = true
+    allow_classic_link_to_remote_vpc = true
+    allow_vpc_to_remote_classic_link = true
+  }
+}
