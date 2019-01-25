@@ -8,9 +8,8 @@ resource "aws_elasticsearch_domain" "prod_es" {
   }
 
   vpc_options {
-      subnet_ids = "${var.private_subnets_ids}"
-      security_group_ids = ["${var.es_sg.id}"
-      ]
+      private_subnets = "${var.private_subnets}"
+      es_security_group_ids = "${var.es_sg.id}"
   }
   ebs_options {
       ebs_enabled = true
