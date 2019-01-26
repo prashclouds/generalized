@@ -4,8 +4,7 @@ variable "vpn_admin_user" {
 variable "vpn_admin_password" {
   default = "openvpn"
 }
-variable "instance_type {
-  type = "string"
+variable "instance_type" {
   description = "instance type of the vpn server"
   default = "t3.micro"
 }
