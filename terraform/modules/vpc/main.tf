@@ -10,6 +10,7 @@ resource "aws_vpc" "vpc" {
   tags = "${
     map(
      "Name", "${var.environment}_${var.cluster_name}_vpc",
+     "kubernetes.io/cluster/${var.environment}_${var.cluster_name}","shared"
     )
   }"
 }
@@ -25,7 +26,8 @@ resource "aws_subnet" "public_subnets" {
   map_public_ip_on_launch = true
   tags = "${
     map(
-     "Name", "${var.environment}_${var.cluster_name}_public_${count.index}"
+     "Name", "${var.environment}_${var.cluster_name}_public_${count.index}",
+     "kubernetes.io/cluster/${var.environment}_${var.cluster_name}","shared"
     )
   }"
 }
@@ -39,6 +41,7 @@ resource "aws_subnet" "private_subnets" {
   tags = "${
     map(
      "Name", "${var.environment}_${var.cluster_name}_private_${count.index}",
+     "kubernetes.io/cluster/${var.environment}_${var.cluster_name}","shared"
     )
   }"
 }

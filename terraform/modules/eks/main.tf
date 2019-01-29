@@ -3,7 +3,7 @@
 
 # create an IAM role that will be used by the K8s master
 resource "aws_iam_role" "eks_master_role" {
-  name = "eks_master_role_k8s_${var.cluster_name}_${var.environment}"
+  name = "eks_master_role_k8s_${var.environment}_${var.cluster_name}"
   assume_role_policy = <<POLICY
 {
   "Version": "2012-10-17",
@@ -35,7 +35,7 @@ resource "aws_iam_role_policy_attachment" "eks-AmazonEKSServicePolicy" {
 
 # security group for the master nodes
 resource "aws_security_group" "k8s_master_security_group" {
-  name        = "k8s_master_sg_${var.cluster_name}_${var.environment}"
+  name        = "k8s_master_sg_${var.environment}_${var.cluster_name}"
   description = "Allows K8s Master communication to the worker nodes"
   vpc_id      = "${var.vpc_id}"
 
@@ -49,7 +49,7 @@ resource "aws_security_group" "k8s_master_security_group" {
   tags = {
     Terraform   = "true"
     Environment = "${var.environment}"
-    k8s-cluster = "${var.cluster_name}_${var.environment}"
+    k8s-cluster = "${var.environment}_${var.cluster_name}"
   }
 }
 
@@ -84,12 +84,12 @@ resource "aws_security_group_rule" "k8s-worker-ingress-ControlPlane" {
 }
 
 resource "aws_eks_cluster" "k8s" {
-  name     = "${var.cluster_name}_${var.environment}"
+  name     = "${var.environment}_${var.cluster_name}"
   role_arn = "${aws_iam_role.eks_master_role.arn}"
   version  = "${var.k8s_version}"
   vpc_config {
     security_group_ids = ["${aws_security_group.k8s_master_security_group.id}"]
-    subnet_ids         = ["${var.private_subnets}"]
+    subnet_ids         = ["${var.public_subnets}"]
   }
   depends_on = [
     "aws_iam_role.eks_master_role",
@@ -155,7 +155,7 @@ users:
   user:
     exec:
       apiVersion: client.authentication.k8s.io/v1alpha1
-      command: heptio-authenticator-aws
+      command: aws-iam-authenticator
       args:
         - "token"
         - "-i"

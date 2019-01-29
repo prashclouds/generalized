@@ -23,10 +23,7 @@ worker= {
   max-size      = "8"
 }
 
-#### KINESIS Module
-project_name    = "kinesis_test"
-stream_name     = "stream_1"
-shard_count     = "48"
+
 
 ### IAM Module
 searchservice_managed_policies =  ["AmazonS3FullAccess","AmazonESFullAccess","CloudWatchFullAccess"]

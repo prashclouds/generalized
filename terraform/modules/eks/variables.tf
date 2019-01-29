@@ -40,6 +40,10 @@ variable "private_subnets" {
   type = "list"
   description = "list of private subnets where the cluster will be deploy"
 }
+variable "public_subnets" {
+  type = "list"
+  description = "list of private subnets where the cluster will be deploy"
+}
 
 variable "roleARN" {
   type = "string"

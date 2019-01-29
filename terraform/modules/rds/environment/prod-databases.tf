@@ -13,6 +13,6 @@ resource "aws_db_instance" "db_prod" {
   username                = "user",
   vpc_security_group_ids    = ["${var.db_security_groups_id}"]
   db_subnet_group_name      = "${var.db_subnet_group}"
-  final_snapshot_identifier = "${var.cluster_name}-${var.environment}-latest"
+  final_snapshot_identifier = "${var.environment}-${var.cluster_name}-latest"
 }
 

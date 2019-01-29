@@ -91,10 +91,11 @@ resource "aws_security_group" "k8s_worker_security_group" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = {
-    Terraform   = "true"
-    k8s-cluster = "${aws_eks_cluster.k8s.name}"
-  }
+  tags = "${
+    map(
+    "kubernetes.io/cluster/${aws_eks_cluster.k8s.name}" ,"owned"
+    )
+  }"
 }
 
 resource "aws_security_group_rule" "k8s-worker-ingress-self" {
@@ -128,7 +129,7 @@ data "aws_ami" "eks-worker" {
 }
 #https://github.com/awslabs/amazon-eks-ami/blob/master/files/bootstrap.sh
 locals {
-  worker-node-userdata = <<USERDATA
+  worker_node_userdata = <<USERDATA
 #!/bin/bash
 set -o xtrace
 /etc/eks/bootstrap.sh --kubelet-extra-args '--node-labels=kubelet.kubernetes.io/role=agent' ${aws_eks_cluster.k8s.name}
@@ -148,7 +149,7 @@ resource "aws_launch_configuration" "worker_node" {
   instance_type               = "${var.worker["instance-type"]}"
   name_prefix                 = "${aws_eks_cluster.k8s.name}_eks_worker_launch_conf"
   security_groups             = ["${aws_security_group.k8s_worker_security_group.id}"]
-  user_data_base64            = "${base64encode(local.worker-node-userdata)}"
+  user_data_base64            = "${base64encode(local.worker_node_userdata)}"
   lifecycle {
     create_before_destroy = true
   }

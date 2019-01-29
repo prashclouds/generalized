@@ -10,7 +10,7 @@ module "databases" {
 # AWS Security Group for RDS
 #
 resource "aws_security_group" "rds" {
-  name   = "${var.cluster_name}_${var.environment}_rds_sg"
+  name   = "${var.environment}_${var.cluster_name}_rds_sg"
   vpc_id = "${var.vpc_id}"
   ingress {
     from_port   = "3306"
