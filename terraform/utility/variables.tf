@@ -31,9 +31,8 @@ variable "vpc" {
 locals{
   public_subnets {
     "${var.region}a" = "192.168.100.0/27"
-    "${var.region}b" = "192.168.100.32/27"
   }
   private_subnets ={
-    "${var.region}a" = "192.168.100.64/27"
+    "${var.region}b" = "192.168.100.32/27"
   }
 }

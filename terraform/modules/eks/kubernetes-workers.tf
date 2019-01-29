@@ -163,13 +163,12 @@ resource "aws_autoscaling_group" "k8s-worker-auto-scale" {
   min_size             = "${var.worker["min-size"]}"
   name                 = "${aws_eks_cluster.k8s.name}_eks_auto_scaling_group"
   vpc_zone_identifier  = ["${var.private_subnets}"]
-  depends_on           = ["aws_launch_configuration.worker_node"]
+  depends_on           = ["aws_launch_configuration.worker_node","aws_security_group.k8s_worker_security_group"]
   tag {
     key                 = "Name"
     value               = "${aws_eks_cluster.k8s.name}_worker"
     propagate_at_launch = true
   }
-
   tag {
     key                 = "kubernetes.io/cluster/${aws_eks_cluster.k8s.name}"
     value               = "owned"

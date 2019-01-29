@@ -97,10 +97,11 @@ resource "aws_internet_gateway" "igw" {
   tags {
     Name = "${var.environment}_${var.cluster_name}_igw"
   }
+  depends_on = ["aws_subnet.public_subnets"]
 }
 
 #
-# AWS Nat Gateway setyp
+# AWS Nat Gateway setup
 # Used for the private subnets
 resource "aws_eip" "nat_gw" {
   vpc = true
