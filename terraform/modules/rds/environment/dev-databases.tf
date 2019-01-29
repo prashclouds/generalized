@@ -1,7 +1,7 @@
-resource "aws_db_instance" "db_qa" {
-  count                     = "${var.environment == "qa" ? 1 : 0}"
+resource "aws_db_instance" "db_dev" {
+  count                     = "${var.environment == "dev" ? 1 : 0}"
   identifier                = "${var.environment}-test",
-  allocated_storage         = 5,
+  allocated_storage         = 10,
   storage_type              = "gp2",
   engine                    = "mysql",
   engine_version            = "8.0.11",

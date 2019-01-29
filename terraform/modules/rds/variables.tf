@@ -5,6 +5,4 @@ variable "environment" {
   default = "dev"
 }
 variable "vpc_id" {}
-variable "private_subnet_ids" {
-  type    = "list"
-}
+variable "rds_subnet_group" {}

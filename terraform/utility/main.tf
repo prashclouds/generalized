@@ -5,12 +5,10 @@ module "vpc" {
   cluster_name    = "${var.cluster_name}"
   public_subnets  = "${local.public_subnets}"
   private_subnets = "${local.private_subnets}"
-  vpcs_to_connect = "${local.vpcs_to_connect}"
 }
 
 module "openvpn" {
   source = "openvpn"
   vpc_id = "${module.vpc.vpc_id}"
   subnet_id = "${module.vpc.public_subnets_ids[0]}"
-
 }

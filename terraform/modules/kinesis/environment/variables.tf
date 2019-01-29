@@ -1,9 +1,11 @@
 variable "environment" {
   description = "Name of environment (i.e. dev, test, prod)"
+  default = "" 
 }
 
 variable "shard_count" {
   description = "The number of shards that the stream will use."
+  default = ""
 }
 
 variable "retention_period" {

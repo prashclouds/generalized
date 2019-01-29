@@ -36,6 +36,10 @@ resource "aws_iam_role_policy_attachment" "eks-AmazonEC2ContainerRegistryReadOnl
   role       = "${aws_iam_role.eks_worker_role.name}"
 }
 
+resource "aws_iam_role_policy_attachment" "eks-CloudWatchFullAccess" {
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchFullAccess"
+  role       = "${aws_iam_role.eks_worker_role.name}"
+}
 # adding the necessary policies for route53 kubernetes
 # @see https://github.com/wearemolecule/route53-kubernetes
 resource "aws_iam_role_policy" "worker-route53-role-policy" {
@@ -89,7 +93,6 @@ resource "aws_security_group" "k8s_worker_security_group" {
 
   tags = {
     Terraform   = "true"
-    Environment = "${var.environment}"
     k8s-cluster = "${aws_eks_cluster.k8s.name}"
   }
 }
@@ -131,7 +134,7 @@ set -o xtrace
 /etc/eks/bootstrap.sh --kubelet-extra-args '--node-labels=kubelet.kubernetes.io/role=agent' ${aws_eks_cluster.k8s.name}
 # DataDog configuration
 DD_API_KEY=${var.datadog_key} bash -c "$(curl -L https://raw.githubusercontent.com/DataDog/datadog-agent/master/cmd/agent/install_script.sh)"
-echo "tags: ${aws_eks_cluster.k8s.name}-worker" >> /etc/datadog-agent/datadog.yaml
+echo "tags: ${aws_eks_cluster.k8s.name}_worker" >> /etc/datadog-agent/datadog.yaml
 usermod -a -G docker dd-agent
 initctl restart datadog-agent
 USERDATA
@@ -143,7 +146,7 @@ resource "aws_launch_configuration" "worker_node" {
   iam_instance_profile        = "${aws_iam_instance_profile.eks-worker-instance-profile.name}"
   image_id                    = "${data.aws_ami.eks-worker.id}"
   instance_type               = "${var.worker["instance-type"]}"
-  name_prefix                 = "eks_worker_${aws_eks_cluster.k8s.name}"
+  name_prefix                 = "${aws_eks_cluster.k8s.name}_eks_worker_launch_conf"
   security_groups             = ["${aws_security_group.k8s_worker_security_group.id}"]
   user_data_base64            = "${base64encode(local.worker-node-userdata)}"
   lifecycle {
@@ -158,12 +161,12 @@ resource "aws_autoscaling_group" "k8s-worker-auto-scale" {
   launch_configuration = "${aws_launch_configuration.worker_node.id}"
   max_size             = "${var.worker["max-size"]}"
   min_size             = "${var.worker["min-size"]}"
-  name                 = "eks_auto_scaling_group_${aws_eks_cluster.k8s.name}"
+  name                 = "${aws_eks_cluster.k8s.name}_eks_auto_scaling_group"
   vpc_zone_identifier  = ["${var.private_subnets}"]
   depends_on           = ["aws_launch_configuration.worker_node"]
   tag {
     key                 = "Name"
-    value               = "worker_${aws_eks_cluster.k8s.name}"
+    value               = "${aws_eks_cluster.k8s.name}_worker"
     propagate_at_launch = true
   }
 

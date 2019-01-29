@@ -44,13 +44,13 @@ variable "private_subnets" {
 variable "rds_subnets" {
   type        = "map"
   description = "Map of AWS availability zones (key) to subnet CIDR (value) assignments for RDS"
-
-  default = {
-    us-east-1a = "192.168.100.96/27"
-    us-east-1b = "192.168.100.128/27"
-  }
+  default     = {}
 }
-
+variable "elasticache_subnets" {
+  type        = "map"
+  description = "Map of AWS availability zones (key) to subnet CIDR (value) assignments for Elasticache"
+  default     = {}
+}
 variable "vpcs_to_connect" {
   type = "list"
   description = "Id of the vpcs to create the peering connection"

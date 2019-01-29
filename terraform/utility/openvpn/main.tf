@@ -11,15 +11,7 @@ data "aws_ami" "openvpn" {
   most_recent = true
   filter {
     name = "name"
-    values = ["amzn-ami-*-x86_64-gp2"]
-  }
-  filter {
-    name = "virtualization-type"
-    values = ["hvm"]
-  }
-  filter {
-    name = "owner-alias"
-    values = ["amazon"]
+    values = ["OpenVPN Access Server 2.6.1*"]
   }
 }
 
@@ -35,6 +27,7 @@ resource "aws_instance" "openvpn" {
   subnet_id                   = "${var.subnet_id}"
   vpc_security_group_ids      = ["${aws_security_group.openvpn.id}"]
   associate_public_ip_address = true
+  disable_api_termination     = true
 
   # `admin_user` and `admin_pw` need to be passed in to the appliance through `user_data`, see docs -->
   # https://docs.openvpn.net/how-to-tutorialsguides/virtual-platforms/amazon-ec2-appliance-ami-quick-start-guide/

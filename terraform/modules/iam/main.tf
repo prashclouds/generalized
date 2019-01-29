@@ -2,7 +2,7 @@
 # MLSERVICE ROLE
 #
 resource "aws_iam_role" "mlservice_role" {
-  name = "${var.environment}-mlservice-role"
+  name = "${var.environment}_mlservice_role"
   assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
@@ -51,7 +51,7 @@ data "aws_iam_policy_document" "mlservice_policy" {
 # SEARCH SERVICE ROLE
 #
 resource "aws_iam_role" "searchservice_role" {
-  name = "${var.environment}-searchservice-role"
+  name = "${var.environment}_searchservice_role"
   assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",

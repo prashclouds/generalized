@@ -10,12 +10,7 @@ variable "param_prefix" {
 }
 variable "environment" {}
 
-#EKS cluster name
 variable "cluster_name" {}
-
-#kinesis stream
-variable "shard_count" {}
-variable "retention_period" {}
 
 ### VPC MODULE
 variable "vpc" {
@@ -38,4 +33,7 @@ variable "rds_subnets" {
 variable "roleARN" {}
 variable "worker" {
   type = "map"
+}
+locals{
+ vpcs_to_connect =["${data.terraform_remote_state.utility.vpc_id}"]
 }

@@ -6,6 +6,7 @@ module "vpc" {
   public_subnets  = "${var.public_subnets}"
   private_subnets = "${var.private_subnets}"
   rds_subnets     = "${var.rds_subnets}"
+  vpcs_to_connect = "${local.vpcs_to_connect}"
 }
 
 module "eks" {
@@ -24,7 +25,7 @@ module "rds" {
   environment         = "${var.environment}"
   cluster_name        = "${var.cluster_name}"
   vpc_id              = "${module.vpc.vpc_id}"
-  private_subnet_ids  = "${module.vpc.rds_subnets_ids}"
+  rds_subnet_group    = "${module.vpc.rds_subnet_group[0]}"
 }
 
 module "elasticsearch" {
@@ -37,8 +38,6 @@ module "elasticsearch" {
 module "kinesis" {
   source              = "modules/kinesis"
   environment         = "${var.environment}"
-  shard_count         = "${var.shard_count}"
-  retention_period    = "${var.retention_period}"
 }
 
 module "iam" {

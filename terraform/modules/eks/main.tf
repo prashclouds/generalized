@@ -11,7 +11,7 @@ resource "aws_iam_role" "eks_master_role" {
     {
       "Effect": "Allow",
       "Principal": {
-        "Service": "ec2.amazonaws.com"
+        "Service": "eks.amazonaws.com"
       },
       "Action": "sts:AssumeRole"
     }
@@ -35,7 +35,7 @@ resource "aws_iam_role_policy_attachment" "eks-AmazonEKSServicePolicy" {
 
 # security group for the master nodes
 resource "aws_security_group" "k8s_master_security_group" {
-  name        = "k8s-master-sg-${var.cluster_name}-${var.environment}"
+  name        = "k8s_master_sg_${var.cluster_name}_${var.environment}"
   description = "Allows K8s Master communication to the worker nodes"
   vpc_id      = "${var.vpc_id}"
 
@@ -49,7 +49,7 @@ resource "aws_security_group" "k8s_master_security_group" {
   tags = {
     Terraform   = "true"
     Environment = "${var.environment}"
-    k8s-cluster = "${var.cluster_name}-${var.environment}"
+    k8s-cluster = "${var.cluster_name}_${var.environment}"
   }
 }
 
@@ -73,6 +73,15 @@ resource "aws_security_group_rule" "k8s-master-ingress-worker" {
   type                     = "ingress"
 }
 
+resource "aws_security_group_rule" "k8s-worker-ingress-ControlPlane" {
+  description              = "Allow workers to communicate with the cluster API Server"
+  from_port                = 443
+  protocol                 = "tcp"
+  security_group_id        = "${aws_security_group.k8s_worker_security_group.id}"
+  source_security_group_id = "${aws_security_group.k8s_master_security_group.id}"
+  to_port                  = 443
+  type                     = "ingress"
+}
 
 resource "aws_eks_cluster" "k8s" {
   name     = "${var.cluster_name}_${var.environment}"
@@ -83,6 +92,7 @@ resource "aws_eks_cluster" "k8s" {
     subnet_ids         = ["${var.private_subnets}"]
   }
   depends_on = [
+    "aws_iam_role.eks_master_role",
     "aws_security_group.k8s_master_security_group",
     "aws_iam_role_policy_attachment.eks-AmazonEKSClusterPolicy",
     "aws_iam_role_policy_attachment.eks-AmazonEKSServicePolicy",

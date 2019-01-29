@@ -1,15 +1,15 @@
-############ Create a production ElasticSearch Domain
+############ Create a ElasticSearch Domain in qa
 ############ Definition of ES domain starts here
-resource "aws_elasticsearch_domain" "prod_es" {
-  count = "${var.environment == "prod" ? 1 : 0}"
-  domain_name = "dominio1"
+resource "aws_elasticsearch_domain" "dev_es" {
+  count = "${var.environment == "dev" ? 1 : 0}"
+  domain_name = "dominio2"
   elasticsearch_version = "6.4"
   cluster_config {
-      instance_type   = "r4.large.elasticsearch"
-      instance_count  = 1
+      instance_type = "m4.large.elasticsearch"
+      instance_count                 = 1
   }
   vpc_options {
-      subnet_ids = ["${var.private_subnets[0]}"]
+      subnet_ids         = ["${var.private_subnets[0]}"]
       security_group_ids = ["${var.es_security_groups_id}"]
   }
   ebs_options {
@@ -24,5 +24,6 @@ resource "aws_elasticsearch_domain" "prod_es" {
     Environment = "${var.environment}"
     Cluster     = "${var.cluster_name}"
   }
-}
-############ Definition of ES domain ends here.
+
+  }
+  ############ Definition of ES domain ends here.
