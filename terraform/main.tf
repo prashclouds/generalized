@@ -21,25 +21,26 @@ module "eks" {
   datadog_key     = "${data.aws_ssm_parameter.datadog_key.value}"
 }
 
-module "rds" {
-  source              = "modules/rds"
-  environment         = "${var.environment}"
-  cluster_name        = "${var.cluster_name}"
-  vpc_id              = "${module.vpc.vpc_id}"
-  rds_subnet_group    = "${module.vpc.rds_subnet_group[0]}"
-}
+# module "rds" {
+#   source              = "modules/rds"
+#   environment         = "${var.environment}"
+#   cluster_name        = "${var.cluster_name}"
+#   vpc_id              = "${module.vpc.vpc_id}"
+#   rds_subnet_group    = "${module.vpc.rds_subnet_group[0]}"
+#   param_prefix        = "${var.param_prefix}"
+# }
 
-module "elasticsearch" {
-  source              = "modules/elasticsearch"
-  environment         = "${var.environment}"
-  vpc_id              = "${module.vpc.vpc_id}"
-  private_subnets     = ["${module.vpc.private_subnets_ids}"]
-}
+# module "elasticsearch" {
+#   source              = "modules/elasticsearch"
+#   environment         = "${var.environment}"
+#   vpc_id              = "${module.vpc.vpc_id}"
+#   private_subnets     = ["${module.vpc.private_subnets_ids}"]
+# }
 
-module "kinesis" {
-  source              = "modules/kinesis"
-  environment         = "${var.environment}"
-}
+# module "kinesis" {
+#   source              = "modules/kinesis"
+#   environment         = "${var.environment}"
+# }
 
 module "iam" {
   source                = "modules/iam"

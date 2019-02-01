@@ -19,3 +19,15 @@ variable "mlservice_managed_policies" {
   description = "List of aws managed policies to associate to the role"
   default = ["CloudWatchFullAccess","AmazonDynamoDBFullAccess"]
 }
+
+variable "wsbackend_managed_policies" {
+  type = "list"
+  description = "List of aws managed policies to associate to the role"
+  default = ["CloudWatchFullAccess","AmazonDynamoDBFullAccess"]
+}
+
+variable "review_managed_policies" {
+  type = "string"
+  description = "List of aws managed policies to associate to the role"
+  default = ["CloudWatchFullAccess"]
+}

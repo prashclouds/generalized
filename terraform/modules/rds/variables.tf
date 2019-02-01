@@ -6,3 +6,4 @@ variable "environment" {
 }
 variable "vpc_id" {}
 variable "rds_subnet_group" {}
+variable "param_prefix" {}

@@ -132,7 +132,7 @@ locals {
   worker_node_userdata = <<USERDATA
 #!/bin/bash
 set -o xtrace
-/etc/eks/bootstrap.sh --kubelet-extra-args '--node-labels=kubelet.kubernetes.io/role=agent' ${aws_eks_cluster.k8s.name}
+/etc/eks/bootstrap.sh ${aws_eks_cluster.k8s.name} --kubelet-extra-args '--node-labels=kubelet.kubernetes.io/role=agent'
 # DataDog configuration
 DD_API_KEY=${var.datadog_key} bash -c "$(curl -L https://raw.githubusercontent.com/DataDog/datadog-agent/master/cmd/agent/install_script.sh)"
 echo "tags: ${aws_eks_cluster.k8s.name}_worker" >> /etc/datadog-agent/datadog.yaml
@@ -146,6 +146,7 @@ resource "aws_launch_configuration" "worker_node" {
   associate_public_ip_address = true
   iam_instance_profile        = "${aws_iam_instance_profile.eks-worker-instance-profile.name}"
   image_id                    = "${data.aws_ami.eks-worker.id}"
+  key_name                    = "${var.worker["key_name"]}"
   instance_type               = "${var.worker["instance-type"]}"
   name_prefix                 = "${aws_eks_cluster.k8s.name}_eks_worker_launch_conf"
   security_groups             = ["${aws_security_group.k8s_worker_security_group.id}"]
