@@ -21,18 +21,15 @@ variable "cluster_name" {
 variable "vpc" {
    type = "map"
    default = {    
-    cidr          = "192.168.100.0/24",
+    cidr          = "10.100.0.0/16",
     dns_hostnames = true,
     dns_support   = true,
     tag           = "utility",
     tenancy       = "default"
+    
   }
 }
 locals{
-  public_subnets {
-    "${var.region}a" = "192.168.100.0/27"
-  }
-  private_subnets ={
-    "${var.region}b" = "192.168.100.32/27"
-  }
+  public_subnets  = ["10.100.0.0/24","10.100.1.0/24"]
+  private_subnets = ["10.100.2.0/24","10.100.3.0/24"]
 }

@@ -4,13 +4,13 @@ region        = "us-east-1"
 
 ### VPC MODULE
 vpc= {
-    cidr          = "192.168.50.0/24",
+    cidr          = "10.2.0.0/16",
     dns_hostnames = true,
     dns_support   = true,
     tenancy       = "default",
   }
-public_subnets  = {us-east-1a = "192.168.50.0/27",  us-east-1b = "192.168.50.160/27"}
-private_subnets = {us-east-1a = "192.168.50.32/27", us-east-1b = "192.168.50.64/27"}
+public_subnets  = ["10.2.0.0/16","10.2.1.0/16"]
+private_subnets = ["10.2.2.0/16","10.2.3.0/16","10.2.4.0/16"]
 rds_subnets     = {us-east-1a = "192.168.50.96/27", us-east-1b = "192.168.50.128/27"}
 
 ### EKS MODULE

@@ -1,6 +1,7 @@
 #
 # AWS VPC setup
 #
+data "aws_availability_zones" "available" {}
 resource "aws_vpc" "vpc" {
   cidr_block           = "${var.vpc["cidr"]}"
   enable_dns_hostnames = "${var.vpc["dns_hostnames"]}"
@@ -18,11 +19,14 @@ resource "aws_vpc" "vpc" {
 #
 # AWS Subnets setup
 #
+locals{
+  private_subnets_count = "${length(var.private_subnets) + length(keys(var.elasticache_subnets)) + length(keys(var.rds_subnets))}"
+}
 resource "aws_subnet" "public_subnets" {
-  count                   = "${length(keys(var.public_subnets))}"
+  count                   = "${length(var.public_subnets)}"
   vpc_id                  = "${aws_vpc.vpc.id}"
-  availability_zone       = "${element(keys(var.public_subnets), count.index)}"
-  cidr_block              = "${element(values(var.public_subnets), count.index)}"
+  availability_zone       = "${element(data.aws_availability_zones.available.names, count.index % length(data.aws_availability_zones.available.names))}"
+  cidr_block              = "${var.public_subnets[count.index]}"
   map_public_ip_on_launch = true
   tags = "${
     map(
@@ -33,10 +37,10 @@ resource "aws_subnet" "public_subnets" {
 }
 
 resource "aws_subnet" "private_subnets" {
-  count                   = "${length(keys(var.private_subnets))}"
+  count                   = "${length(var.private_subnets)}"
   vpc_id                  = "${aws_vpc.vpc.id}"
-  availability_zone       = "${element(keys(var.private_subnets), count.index)}"
-  cidr_block              = "${element(values(var.private_subnets), count.index)}"
+  availability_zone       = "${element(data.aws_availability_zones.available.names, count.index % length(data.aws_availability_zones.available.names))}"
+  cidr_block              = "${var.private_subnets[count.index]}"
   map_public_ip_on_launch = false
   tags = "${
     map(
@@ -107,16 +111,21 @@ resource "aws_internet_gateway" "igw" {
 # AWS Nat Gateway setup
 # Used for the private subnets
 resource "aws_eip" "nat_gw" {
-  vpc = true
+  count       = "${local.private_subnets_count}"
+  vpc         = true
+  depends_on  = ["aws_subnet.private_subnets"]
 }
 
 resource "aws_nat_gateway" "nat_gw" {
-  allocation_id = "${aws_eip.nat_gw.id}"
+  count         = "${local.private_subnets_count}"
+  allocation_id = "${aws_eip.nat_gw.0.id}"
   subnet_id     = "${aws_subnet.public_subnets.0.id}"
   tags = {
     Name = "${var.environment}_${var.cluster_name}_nat"
   }
+  depends_on = ["aws_subnet.private_subnets"]
 }
+
 
 #
 # AWS Route Table setup
@@ -131,7 +140,7 @@ resource "aws_route_table" "private" {
   vpc_id = "${aws_vpc.vpc.id}"
   route {
     cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = "${aws_nat_gateway.nat_gw.id}"
+    nat_gateway_id = "${aws_nat_gateway.nat_gw.0.id}"
   }
   tags {
     Name = "${var.environment}_${var.cluster_name}_private_route"
@@ -153,7 +162,7 @@ resource "aws_route_table" "elasticache" {
 }
 
 resource "aws_route_table_association" "private_subnet" {
-  count          = "${length(keys(var.private_subnets))}"
+  count          = "${length(var.private_subnets)}"
   subnet_id      = "${element(aws_subnet.private_subnets.*.id, count.index)}"
   route_table_id = "${aws_route_table.private.id}"
 }
@@ -175,8 +184,8 @@ resource "aws_route_table_association" "elasticache_subnet" {
 
 resource "aws_vpc_peering_connection" "peering" {
   count         = "${length(var.vpcs_to_connect)}"
-  peer_vpc_id   = "${aws_vpc.vpc.id}"
-  vpc_id        = "${var.vpcs_to_connect[count.index]}"
+  peer_vpc_id   = "${var.vpcs_to_connect[count.index]}"
+  vpc_id        = "${aws_vpc.vpc.id}"
   auto_accept   = true
 
   accepter {
@@ -195,10 +204,10 @@ resource "aws_vpc_peering_connection" "peering" {
   }
 }
 
-/*TODO
-resource "aws_route" "route_peering" {
-  route_table_id            = "rtb-4fbb3ac4"
-  destination_cidr_block    = "10.0.1.0/22"
-  vpc_peering_connection_id = "pcx-45ff3dc1"
-  depends_on                = ["aws_route_table.testing"]
-}*/
+resource "aws_route" "route_peering_public" {
+  count                     = "${length(var.vpcs_to_connect)}"
+  route_table_id            = "${aws_vpc.vpc.main_route_table_id}"
+  vpc_peering_connection_id = "${element(aws_vpc_peering_connection.peering.*.id,count.index)}"
+  depends_on                = ["aws_vpc.vpc","aws_vpc_peering_connection.peering"]
+}
+

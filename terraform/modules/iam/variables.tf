@@ -26,8 +26,8 @@ variable "wsbackend_managed_policies" {
   default = ["CloudWatchFullAccess","AmazonDynamoDBFullAccess"]
 }
 
-variable "review_managed_policies" {
-  type = "string"
+variable "reviewservice_managed_policies" {
+  type = "list"
   description = "List of aws managed policies to associate to the role"
   default = ["CloudWatchFullAccess"]
 }
