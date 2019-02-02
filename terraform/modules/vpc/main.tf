@@ -123,7 +123,7 @@ resource "aws_nat_gateway" "nat_gw" {
   tags = {
     Name = "${var.environment}_${var.cluster_name}_nat"
   }
-  depends_on = ["aws_subnet.private_subnets"]
+  depends_on = ["aws_subnet.private_subnets","aws_subnet.public_subnets"]
 }
 
 

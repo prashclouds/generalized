@@ -6,7 +6,7 @@ module "vpc" {
   public_subnets  = "${var.public_subnets}"
   private_subnets = "${var.private_subnets}"
   rds_subnets     = "${var.rds_subnets}"
-  vpcs_to_connect = "${local.vpcs_to_connect}"
+  //vpcs_to_connect = "${local.vpcs_to_connect}"
 }
 
 module "eks" {

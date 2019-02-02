@@ -35,8 +35,8 @@ variable "worker" {
   type = "map"
 }
 locals{
- vpc_to_connect ={
-    id = "${data.terraform_remote_state.utility.vpc_id}"
-    cidr = 
-  }
+ # vpc_to_connect ={
+ #    id = "${data.terraform_remote_state.utility.vpc_id}"
+
+ #  }
 }
