@@ -104,20 +104,19 @@ resource "aws_internet_gateway" "igw" {
   tags {
     Name = "${var.environment}_${var.cluster_name}_igw"
   }
-  depends_on = ["aws_subnet.public_subnets"]
 }
 
 #
 # AWS Nat Gateway setup
 # Used for the private subnets
 resource "aws_eip" "nat_gw" {
-  count       = "${local.private_subnets_count}"
+  count       = "${local.private_subnets_count> 0 ? 1 :0}"
   vpc         = true
   depends_on  = ["aws_subnet.private_subnets"]
 }
 
 resource "aws_nat_gateway" "nat_gw" {
-  count         = "${local.private_subnets_count}"
+  count         = "${local.private_subnets_count > 0 ? 1 : 0}"
   allocation_id = "${aws_eip.nat_gw.0.id}"
   subnet_id     = "${aws_subnet.public_subnets.0.id}"
   tags = {
@@ -137,6 +136,7 @@ resource "aws_route" "public_gateway" {
 }
 
 resource "aws_route_table" "private" {
+  count  = "${local.private_subnets_count > 0 ? 1 : 0}"
   vpc_id = "${aws_vpc.vpc.id}"
   route {
     cidr_block     = "0.0.0.0/0"
@@ -164,7 +164,7 @@ resource "aws_route_table" "elasticache" {
 resource "aws_route_table_association" "private_subnet" {
   count          = "${length(var.private_subnets)}"
   subnet_id      = "${element(aws_subnet.private_subnets.*.id, count.index)}"
-  route_table_id = "${aws_route_table.private.id}"
+  route_table_id = "${aws_route_table.private.0.id}"
 }
 
 resource "aws_route_table_association" "rds_subnet" {
