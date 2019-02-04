@@ -9,14 +9,10 @@ resource "aws_db_instance" "db_prod" {
   multi_az                = false,
   storage_encrypted       = true,
   backup_retention_period = 1,
-  password                = "${aws_ssm_parameter.db_prod_password.value}",
+  password                = "${var.passwords["db1"]}",
   username                = "user",
   vpc_security_group_ids    = ["${var.db_security_groups_id}"]
   db_subnet_group_name      = "${var.db_subnet_group}"
   final_snapshot_identifier = "${var.environment}-${var.cluster_name}-latest"
   parameter_group_name      = "utf-8-encoding"
-}
-
-data "aws_ssm_parameter" "db_prod_password" {
-  name = "${var.param_prefix}/${var.environment}/test-password"
 }

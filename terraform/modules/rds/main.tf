@@ -4,8 +4,20 @@ module "databases" {
   db_security_groups_id = "${aws_security_group.rds.id}"
   environment           = "${var.environment}"
   cluster_name          = "${var.cluster_name}"
+  param_prefix          = "${var.param_prefix}"
+  passwords             = "${local.passwords}"
 }
-
+#
+# RDS passwords
+#
+data "aws_ssm_parameter" "db1_password" {
+  name = "${var.param_prefix}/${var.environment}/test-password"
+}
+locals{
+  passwords ={
+    db1 = "${data.aws_ssm_parameter.db1_password.value}"
+  }
+}
 #
 # AWS Security Group for RDS
 #
@@ -25,3 +37,4 @@ resource "aws_security_group" "rds" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
+

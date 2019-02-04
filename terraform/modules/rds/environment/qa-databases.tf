@@ -9,7 +9,7 @@ resource "aws_db_instance" "db_qa" {
   multi_az                  = false,
   storage_encrypted         = false,
   backup_retention_period   = 1,
-  password                  = "${aws_ssm_parameter.db_qa_password}",
+  password                  = "${var.passwords["db1"]}",
   username                  = "user",
   vpc_security_group_ids    = ["${var.db_security_groups_id}"]
   db_subnet_group_name      = "${var.db_subnet_group}"
@@ -17,6 +17,3 @@ resource "aws_db_instance" "db_qa" {
   parameter_group_name      = "utf-8-encoding"
 }
 
-data "aws_ssm_parameter" "db_qa_password" {
-  name = "${var.param_prefix}/${var.environment}/test-password"
-}
