@@ -15,3 +15,4 @@ terraform plan -var-file=config/braulio.tfvars
 
 
 terraform init -backend-config=config/backend-utility.conf
+terraform apply -var-file=config/backend-utility.conf

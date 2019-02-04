@@ -1,4 +1,4 @@
-# this will create K8s cluster worker and will also create 
+# this will create K8s cluster worker and will also create
 # all the necessary IAM roles required by K8s worker nodes
 
 # create an IAM role that will be used by the K8s worker
@@ -196,6 +196,6 @@ data:
         - system:nodes
     - rolearn: ${var.roleARN}
       groups:
-        - system:masters    
+        - system:masters
 CONFIGMAPAWSAUTH
 }

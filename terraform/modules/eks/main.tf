@@ -1,4 +1,4 @@
-# this will create K8s cluster master and will also create 
+# this will create K8s cluster master and will also create
 # all the necessary IAM roles required by K8s master nodes
 
 # create an IAM role that will be used by the K8s master
@@ -33,6 +33,7 @@ resource "aws_iam_role_policy_attachment" "eks-AmazonEKSServicePolicy" {
   depends_on = ["aws_iam_role.eks_master_role"]
 }
 
+
 # security group for the master nodes
 resource "aws_security_group" "k8s_master_security_group" {
   name        = "k8s_master_sg_${var.environment}_${var.cluster_name}"
@@ -56,10 +57,10 @@ resource "aws_security_group" "k8s_master_security_group" {
 resource "aws_security_group_rule" "k8s_worker_ingress_master" {
   description              = "Allow worker Kubelets and pods to receive communication from the master control plane"
   from_port                = 1025
+  to_port                  = 65535
   protocol                 = "tcp"
   security_group_id        = "${aws_security_group.k8s_worker_security_group.id}"
   source_security_group_id = "${aws_security_group.k8s_master_security_group.id}"
-  to_port                  = 65535
   type                     = "ingress"
 }
 
@@ -89,7 +90,7 @@ resource "aws_eks_cluster" "k8s" {
   version  = "${var.k8s_version}"
   vpc_config {
     security_group_ids = ["${aws_security_group.k8s_master_security_group.id}"]
-    subnet_ids         = ["${var.public_subnets}"]
+    subnet_ids         = ["${concat(var.public_subnets,var.private_subnets)}"]
   }
   depends_on = [
     "aws_iam_role.eks_master_role",
