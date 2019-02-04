@@ -20,7 +20,7 @@ worker= {
   desired-size  = "4",
   min-size      = "4",
   max-size      = "8"
-  key_name      = "test.pem"
+  key_name      = "test"
 }
 
 
