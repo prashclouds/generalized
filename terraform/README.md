@@ -4,15 +4,7 @@
 ```sh
 env=prod
 terraform init -backend-config=config/backend-${env}.conf
-terraform plan -var-file=config/braulio.tfvars
-terraform apply -var-file=config/braulio.tfvars
+terraform plan -var-file=config/${env}.tfvars
+terraform apply -var-file=config/${env}.tfvars
 terraform destroy -var-file=config/${env}.tfvars
 ```
-
-
-terraform init -backend-config=config/backend-braulio.conf
-terraform plan -var-file=config/braulio.tfvars
-
-
-terraform init -backend-config=config/backend-utility.conf
-terraform apply -var-file=config/backend-utility.conf
