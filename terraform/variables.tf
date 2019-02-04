@@ -47,10 +47,10 @@ locals{
 
 
 ### IAM Module
-variable "searchservice_managed_policies" {}
+variable "searchservice_managed_policies" {type="list"}
 
-variable "mlservice_managed_policies" {}
+variable "mlservice_managed_policies" {type="list"}
 
-variable "wsbackend_managed_policies" {}
+variable "wsbackend_managed_policies" {type="list"}
 
-variable "reviewservice_managed_policies" {}
+variable "reviewservice_managed_policies" {type="list"}
