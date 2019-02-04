@@ -16,7 +16,11 @@ variable "cluster_name" {
   type = "string"
   default = "unitq"
 }
-
+variable "key_name" {
+  type = "string"
+  description = "pem key"
+  default = "test"
+}
 ### VPC MODULE
 variable "vpc" {
    type = "map"

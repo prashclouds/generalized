@@ -36,6 +36,11 @@ variable "vpc_id" {
   type = "string"
   description = "Id of the vpc where the cluster will be deploy"
 }
+variable "vpn_sg" {
+  type = "string"
+  description = "Security group of the vpn to allow connections over ssh"
+  default = ""
+}
 
 variable "private_subnets" {
   type = "list"

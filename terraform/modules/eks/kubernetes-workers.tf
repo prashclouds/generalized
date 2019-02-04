@@ -107,12 +107,17 @@ resource "aws_security_group_rule" "k8s-worker-ingress-self" {
   to_port                  = 65535
   type                     = "ingress"
 }
+resource "aws_security_group_rule" "k8s-worker-ingress-ssh" {
+  count                    = "${var.vpn_sg != ""? 1 : 0}"
+  description              = "Allow vpn to connect over ssh "
+  from_port                = 22
+  protocol                 = "tcp"
+  security_group_id        = "${aws_security_group.k8s_worker_security_group.id}"
+  source_security_group_id = "${var.vpn_sg}"
+  to_port                  = 22
+  type                     = "ingress"
+}
 
-
-
-# This data source is included for ease of sample architecture deployment
-# and can be swapped out as necessary.
-data "aws_region" "current" {}
 
 # EKS currently documents this required userdata for EKS worker nodes to
 # properly configure Kubernetes applications on the EC2 instance.
@@ -143,7 +148,7 @@ USERDATA
 
 # AutoScaling Launch Configuration that uses all our prerequisite resources to define how to create EC2 instances using them.
 resource "aws_launch_configuration" "worker_node" {
-  associate_public_ip_address = true
+  associate_public_ip_address = false
   iam_instance_profile        = "${aws_iam_instance_profile.eks-worker-instance-profile.name}"
   image_id                    = "${data.aws_ami.eks-worker.id}"
   key_name                    = "${var.worker["key_name"]}"

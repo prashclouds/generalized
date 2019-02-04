@@ -14,3 +14,6 @@ variable "subnet_id" {
 variable "vpc_id" {
   description = "id of the vpc where the vpn will be deploy"
 }
+variable "key_name" {
+  description = "key to connect over ssh to the openvpn"
+}

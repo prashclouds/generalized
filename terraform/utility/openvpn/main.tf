@@ -1,12 +1,3 @@
-resource "tls_private_key" "key" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
-}
-resource "aws_key_pair" "openvpn" {
-  key_name   = "openvpn-key"
-  public_key = "${tls_private_key.key.public_key_openssh}"
-}
-
 data "aws_ami" "openvpn" {
   most_recent = true
   filter {
@@ -23,7 +14,7 @@ resource "aws_instance" "openvpn" {
 
   ami                         = "${data.aws_ami.openvpn.id}"
   instance_type               = "${var.instance_type}"
-  key_name                    = "${aws_key_pair.openvpn.key_name}"
+  key_name                    = "${var.key_name}"
   subnet_id                   = "${var.subnet_id}"
   vpc_security_group_ids      = ["${aws_security_group.openvpn.id}"]
   associate_public_ip_address = true

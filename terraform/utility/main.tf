@@ -8,7 +8,8 @@ module "vpc" {
 }
 
 module "openvpn" {
-  source = "openvpn"
-  vpc_id = "${module.vpc.vpc_id}"
+  source    = "openvpn"
+  vpc_id    = "${module.vpc.vpc_id}"
   subnet_id = "${module.vpc.public_subnets_ids[0]}"
+  key_name  = "${var.key_name}"
 }
