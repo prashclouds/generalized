@@ -33,9 +33,9 @@ variable "private_subnets" {
 }
 
 variable "rds_subnets" {
-  type        = "map"
-  description = "Map of AWS availability zones (key) to subnet CIDR (value) assignments for RDS"
-  default     = {}
+  type        = "list"
+  description = "List assignments for RDS"
+  default     = []
 }
 variable "elasticache_subnets" {
   type        = "map"

@@ -1,6 +1,6 @@
 environment   = "dev"
 cluster_name  = "unitq"
-region        = "us-east-1"
+region        = "us-west-2"
 
 ### VPC MODULE
 vpc= {
@@ -11,7 +11,7 @@ vpc= {
   }
 public_subnets  = ["10.5.0.0/24","10.5.1.0/24"]
 private_subnets = ["10.5.2.0/24","10.5.3.0/24","10.5.4.0/24"]
-rds_subnets     = {}
+rds_subnets     = ["10.5.5.0/24","10.5.6.0/24"]
 
 
 
@@ -27,5 +27,7 @@ worker= {
 
 
 ### IAM MODULE
-searchservice_managed_policies =  ["AmazonS3FullAccess","AmazonESFullAccess","CloudWatchFullAccess"]
-mlservice_managed_policies     =  ["CloudWatchFullAccess","AmazonDynamoDBFullAccess"]
+searchservice_managed_policies = ["AmazonS3FullAccess","AmazonESFullAccess","CloudWatchFullAccess"]
+mlservice_managed_policies     = ["CloudWatchFullAccess","AmazonDynamoDBFullAccess"]
+wsbackend_managed_policies     = ["CloudWatchFullAccess","AmazonDynamoDBFullAccess"]
+reviewservice_managed_policies = ["CloudWatchFullAccess"]

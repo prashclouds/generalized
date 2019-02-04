@@ -1,6 +1,6 @@
-environment="prod"
-cluster_name="unitq"
-region="us-east-1"
+environment   ="prod"
+cluster_name  ="unitq"
+region        ="us-west-2"
 
 ### VPC Module
 vpc= {
@@ -11,7 +11,7 @@ vpc= {
   }
 public_subnets  = ["10.1.0.0/24","10.1.1.0/24"]
 private_subnets = ["10.1.2.0/24","10.1.3.0/24","10.1.4.0/24"]
-rds_subnets = {}
+rds_subnets     = ["10.1.5.0/24","10.1.6.0/24"]
 
 ### EKS MODULE
 roleARN = "arn:aws:iam::619993530046:role/UnitQEKSUser"
@@ -26,5 +26,7 @@ worker= {
 
 
 ### IAM Module
-searchservice_managed_policies =  ["AmazonS3FullAccess","AmazonESFullAccess","CloudWatchFullAccess"]
-mlservice_managed_policies     =  ["CloudWatchFullAccess","AmazonDynamoDBFullAccess"]
+searchservice_managed_policies = ["AmazonS3FullAccess","AmazonESFullAccess","CloudWatchFullAccess"]
+mlservice_managed_policies     = ["CloudWatchFullAccess","AmazonDynamoDBFullAccess"]
+wsbackend_managed_policies     = ["CloudWatchFullAccess","AmazonDynamoDBFullAccess"]
+reviewservice_managed_policies = ["CloudWatchFullAccess"]

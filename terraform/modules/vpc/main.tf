@@ -20,7 +20,7 @@ resource "aws_vpc" "vpc" {
 # AWS Subnets setup
 #
 locals{
-  private_subnets_count = "${length(var.private_subnets) + length(keys(var.elasticache_subnets)) + length(keys(var.rds_subnets))}"
+  private_subnets_count = "${length(var.private_subnets) + length(var.elasticache_subnets) + length(var.rds_subnets)}"
 }
 resource "aws_subnet" "public_subnets" {
   count                   = "${length(var.public_subnets)}"
@@ -54,10 +54,10 @@ resource "aws_subnet" "private_subnets" {
 # RDS subnet
 #
 resource "aws_subnet" "private_rds_subnets" {
-  count                   = "${length(keys(var.rds_subnets))}"
+  count                   = "${length(var.rds_subnets)}"
   vpc_id                  = "${aws_vpc.vpc.id}"
-  availability_zone       = "${element(keys(var.rds_subnets), count.index)}"
-  cidr_block              = "${element(values(var.rds_subnets), count.index)}"
+  availability_zone       = "${element(data.aws_availability_zones.available.names, count.index % length(data.aws_availability_zones.available.names))}"
+  cidr_block              = "${var.rds_subnets[count.index]}"
   map_public_ip_on_launch = false
   tags = "${
     map(
@@ -67,7 +67,7 @@ resource "aws_subnet" "private_rds_subnets" {
 }
 
 resource "aws_db_subnet_group" "rds" {
-  count      = "${length(keys(var.rds_subnets)) > 0 ? 1 : 0}"
+  count      = "${length(var.rds_subnets) > 0 ? 1 : 0}"
   name       = "${var.environment}_${var.cluster_name}_rds_subnet_group"
   subnet_ids =  ["${aws_subnet.private_rds_subnets.*.id}"]
 }
@@ -76,11 +76,11 @@ resource "aws_db_subnet_group" "rds" {
 # ElastiCache subnet
 #
 resource "aws_subnet" "private_elasticache_subnets" {
-  count = "${length(keys(var.elasticache_subnets))}"
+  count = "${length(var.elasticache_subnets)}"
 
   vpc_id                  = "${aws_vpc.vpc.id}"
-  availability_zone       = "${element(keys(var.elasticache_subnets), count.index)}"
-  cidr_block              = "${element(values(var.elasticache_subnets), count.index)}"
+  availability_zone       = "${element(data.aws_availability_zones.available.names, count.index % length(data.aws_availability_zones.available.names))}"
+  cidr_block              = "${var.elasticache_subnets[count.index]}"
   map_public_ip_on_launch = false
   tags = "${
     map(
@@ -162,7 +162,7 @@ resource "aws_route" "nat_gateway_to_private_route_table" {
 
 
 resource "aws_route_table" "rds_route_table" {
-  count = "${length(keys(var.rds_subnets)) > 0 ? 1 : 0}"
+  count = "${length(var.rds_subnets) > 0 ? 1 : 0}"
   vpc_id = "${aws_vpc.vpc.id}"
   tags {
     Name = "${var.environment}_${var.cluster_name}_rds_route"
@@ -170,7 +170,7 @@ resource "aws_route_table" "rds_route_table" {
 }
 
 resource "aws_route" "nat_gateway_to_rds_route_table" {
-  count = "${length(keys(var.rds_subnets)) > 0 ? 1 : 0}"
+  count = "${length(var.rds_subnets) > 0 ? 1 : 0}"
   route_table_id         = "${aws_route_table.rds_route_table.0.id}"
   destination_cidr_block = "0.0.0.0/0"
   nat_gateway_id         = "${aws_nat_gateway.nat_gw.0.id}"
@@ -178,7 +178,7 @@ resource "aws_route" "nat_gateway_to_rds_route_table" {
 
 
 resource "aws_route_table" "elasticache_route_table" {
-  count = "${length(keys(var.elasticache_subnets)) > 0 ? 1 : 0}"
+  count = "${length(var.elasticache_subnets) > 0 ? 1 : 0}"
   vpc_id = "${aws_vpc.vpc.id}"
   tags {
     Name = "${var.environment}_${var.cluster_name}_rds_route"
@@ -186,7 +186,7 @@ resource "aws_route_table" "elasticache_route_table" {
 }
 
 resource "aws_route" "nat_gateway_to_elasticache_route_table" {
-  count = "${length(keys(var.elasticache_subnets)) > 0 ? 1 : 0}"
+  count = "${length(var.elasticache_subnets) > 0 ? 1 : 0}"
   route_table_id         = "${aws_route_table.elasticache_route_table.0.id}"
   destination_cidr_block = "0.0.0.0/0"
   nat_gateway_id         = "${aws_nat_gateway.nat_gw.0.id}"
@@ -207,13 +207,13 @@ resource "aws_route_table_association" "private_subnet" {
 }
 
 resource "aws_route_table_association" "rds_subnet" {
-  count          = "${length(keys(var.rds_subnets))}"
+  count          = "${length(var.rds_subnets)}"
   subnet_id      = "${element(aws_subnet.private_rds_subnets.*.id, count.index)}"
   route_table_id = "${aws_route_table.rds_route_table.0.id}"
 }
 
 resource "aws_route_table_association" "elasticache_subnet" {
-  count = "${length(keys(var.elasticache_subnets))}"
+  count          = "${length(var.elasticache_subnets)}"
   subnet_id      = "${element(aws_subnet.private_elasticache_subnets.*.id, count.index)}"
   route_table_id = "${aws_route_table.elasticache_route_table.0.id}"
 }
@@ -223,7 +223,7 @@ resource "aws_route_table_association" "elasticache_subnet" {
 #
 
 resource "aws_vpc_peering_connection" "peering" {
-  count = "${length(keys(var.vpc_to_connect)) > 0 ? 1 : 0 }"
+  count         = "${length(keys(var.vpc_to_connect)) > 0 ? 1 : 0 }"
   peer_vpc_id   = "${var.vpc_to_connect["vpc_id"]}"
   vpc_id        = "${aws_vpc.vpc.id}"
   auto_accept   = true
@@ -259,7 +259,7 @@ resource "aws_route" "route_from_public_to_peering" {
 }
 
 resource "aws_route" "route_from_elasticache_to_peering" {
-  count                     = "${length(keys(var.vpc_to_connect)) > 0 && length(keys(var.elasticache_subnets)) > 0  ? 1 : 0 }"
+  count                     = "${length(keys(var.vpc_to_connect)) > 0 && length(var.elasticache_subnets) > 0  ? 1 : 0 }"
   route_table_id            = "${aws_route_table.elasticache_route_table.0.id}"
   destination_cidr_block    = "${var.vpc_to_connect["vpc_cidr"]}"
   vpc_peering_connection_id = "${aws_vpc_peering_connection.peering.0.id}"
@@ -268,7 +268,7 @@ resource "aws_route" "route_from_elasticache_to_peering" {
 
 
 resource "aws_route" "route_from_rds_to_peering" {
-  count                     = "${length(keys(var.vpc_to_connect)) > 0  && length(keys(var.rds_subnets)) > 0 ? 1 : 0 }"
+  count                     = "${length(keys(var.vpc_to_connect)) > 0  && length(var.rds_subnets) > 0 ? 1 : 0 }"
   route_table_id            = "${aws_route_table.rds_route_table.0.id}"
   destination_cidr_block    = "${var.vpc_to_connect["vpc_cidr"]}"
   vpc_peering_connection_id = "${aws_vpc_peering_connection.peering.0.id}"

@@ -26,8 +26,8 @@ variable "private_subnets" {
 }
 
 variable "rds_subnets" {
-  type = "map"
-  default = {}
+  type = "list"
+  default = []
 }
 
 ### EKS MODULE
@@ -44,3 +44,13 @@ locals{
     private_route_table   = "${data.terraform_remote_state.utility.private_route_table}"
   }
 }
+
+
+### IAM Module
+variable "searchservice_managed_policies" {}
+
+variable "mlservice_managed_policies" {}
+
+variable "wsbackend_managed_policies" {}
+
+variable "reviewservice_managed_policies" {}

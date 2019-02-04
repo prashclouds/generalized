@@ -44,7 +44,11 @@ module "eks" {
 # }
 
 # module "iam" {
-#   source                = "modules/iam"
-#   environment           = "${var.environment}"
-#   kubernetes_worker_arn = "${module.eks.kubernetes_worker_arn}"
+#   source                         = "modules/iam"
+#   environment                    = "${var.environment}"
+#   kubernetes_worker_arn          = "${module.eks.kubernetes_worker_arn}"
+#   searchservice_managed_policies = "${var.searchservice_managed_policies}"
+#   mlservice_managed_policies     = "${var.mlservice_managed_policies}"
+#   wsbackend_managed_policies     = "${var.wsbackend_managed_policies}"
+#   reviewservice_managed_policies = "${var.reviewservice_managed_policies}"
 # }
