@@ -1,4 +1,4 @@
-environment   = "braulio"
+environment   = "dev"
 cluster_name  = "unitq"
 region        = "us-east-1"
 
