@@ -227,7 +227,7 @@ resource "aws_vpc_peering_connection" "peering" {
   peer_vpc_id   = "${var.vpc_to_connect["vpc_id"]}"
   vpc_id        = "${aws_vpc.vpc.id}"
   auto_accept   = true
-
+  peer_region   = "${var.vpc_to_connect["vpc_region"]}"
   accepter {
     allow_remote_vpc_dns_resolution = true
   }
