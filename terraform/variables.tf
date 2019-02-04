@@ -18,15 +18,16 @@ variable "vpc" {
 }
 
 variable "public_subnets" {
-   type = "map"
+   type = "list"
 }
 
 variable "private_subnets" {
-   type = "map"
+   type = "list"
 }
 
 variable "rds_subnets" {
   type = "map"
+  default = {}
 }
 
 ### EKS MODULE
@@ -35,8 +36,8 @@ variable "worker" {
   type = "map"
 }
 locals{
- # vpc_to_connect ={
- #    id = "${data.terraform_remote_state.utility.vpc_id}"
-
- #  }
+ vpc_to_connect ={
+    vpc_id    = "${data.terraform_remote_state.utility.vpc_id}"
+    vpc_cidr  = "${data.terraform_remote_state.utility.vpc_cidr}"
+  }
 }

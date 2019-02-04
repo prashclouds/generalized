@@ -11,7 +11,7 @@ vpc= {
   }
 public_subnets  = ["10.2.0.0/16","10.2.1.0/16"]
 private_subnets = ["10.2.2.0/16","10.2.3.0/16","10.2.4.0/16"]
-rds_subnets     = {us-east-1a = "192.168.50.96/27", us-east-1b = "192.168.50.128/27"}
+rds_subnets     = {}
 
 ### EKS MODULE
 roleARN = "arn:aws:iam::695292474035:role/aws-reserved/sso.amazonaws.com/AWSReservedSSO_AD-EKS-Dev_e62cac11786225d8"

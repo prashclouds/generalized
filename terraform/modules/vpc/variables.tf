@@ -42,8 +42,8 @@ variable "elasticache_subnets" {
   description = "Map of AWS availability zones (key) to subnet CIDR (value) assignments for Elasticache"
   default     = {}
 }
-variable "vpcs_to_connect" {
-  type = "list"
-  description = "Id of the vpcs to create the peering connection"
-  default = []
+variable "vpc_to_connect" {
+  type = "map"
+  description = "Id and cidr [vpc_id,vpc_cidr] of the vpcs to create the peering connection"
+  default = {}
 }
