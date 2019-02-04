@@ -37,7 +37,9 @@ variable "worker" {
 }
 locals{
  vpc_to_connect ={
-    vpc_id    = "${data.terraform_remote_state.utility.vpc_id}"
-    vpc_cidr  = "${data.terraform_remote_state.utility.vpc_cidr}"
+    vpc_id                = "${data.terraform_remote_state.utility.vpc_id}"
+    vpc_cidr              = "${data.terraform_remote_state.utility.vpc_cidr}"
+    public_route_table    = "${data.terraform_remote_state.utility.public_route_table}"
+    private_route_table   = "${data.terraform_remote_state.utility.private_route_table}"
   }
 }

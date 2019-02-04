@@ -129,107 +129,166 @@ resource "aws_nat_gateway" "nat_gw" {
 #
 # AWS Route Table setup
 # Grant the VPC internet access on its main route table
-resource "aws_route" "public_gateway" {
-  route_table_id         = "${aws_vpc.vpc.main_route_table_id}"
+
+resource "aws_route_table" "public_route_table" {
+  count = "${length(var.public_subnets) > 0 ? 1 : 0}"
+  vpc_id = "${aws_vpc.vpc.id}"
+  tags {
+    Name = "${var.environment}_${var.cluster_name}_public_route"
+  }
+}
+resource "aws_route" "internet_gateway_to_public_route_table" {
+  count = "${length(var.public_subnets) > 0 ? 1 : 0}"
+  route_table_id         = "${aws_route_table.public_route_table.0.id}"
   destination_cidr_block = "0.0.0.0/0"
   gateway_id             = "${aws_internet_gateway.igw.id}"
 }
 
-resource "aws_route_table" "private" {
-  count  = "${local.private_subnets_count > 0 ? 1 : 0}"
-  vpc_id = "${aws_vpc.vpc.id}"
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = "${aws_nat_gateway.nat_gw.0.id}"
-  }
+
+resource "aws_route_table" "private_route_table" {
+  count             = "${length(var.private_subnets) > 0 ? 1 : 0}"
+  vpc_id            = "${aws_vpc.vpc.id}"
   tags {
     Name = "${var.environment}_${var.cluster_name}_private_route"
   }
 }
-resource "aws_route_table" "rds" {
+
+resource "aws_route" "nat_gateway_to_private_route_table" {
+  count                  = "${length(var.private_subnets) > 0 ? 1 : 0}"
+  route_table_id         = "${aws_route_table.private_route_table.0.id}"
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = "${aws_nat_gateway.nat_gw.0.id}"
+}
+
+
+resource "aws_route_table" "rds_route_table" {
   count = "${length(keys(var.rds_subnets)) > 0 ? 1 : 0}"
   vpc_id = "${aws_vpc.vpc.id}"
   tags {
     Name = "${var.environment}_${var.cluster_name}_rds_route"
   }
 }
-resource "aws_route_table" "rds_route_table" {
-  count  = "${length(keys(var.rds_subnets)) > 0 ? 1 : 0}"
-  vpc_id = "${aws_vpc.vpc.id}"
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = "${aws_nat_gateway.nat_gw.0.id}"
-  }
-  tags {
-    Name = "${var.environment}_${var.cluster_name}_private_rds_route"
-  }
+
+resource "aws_route" "nat_gateway_to_rds_route_table" {
+  count = "${length(keys(var.rds_subnets)) > 0 ? 1 : 0}"
+  route_table_id         = "${aws_route_table.rds_route_table.0.id}"
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = "${aws_nat_gateway.nat_gw.0.id}"
 }
-resource "aws_route_table" "elasticache" {
-  count = "${length(keys(var.elasticache_subnets)) > 0 ? 1 : 0}"
-  vpc_id = "${local.vpc_id}"
-  tags {
-    Name = "${var.environment}_${var.cluster_name}_es_route"
-  }
-}
+
+
 resource "aws_route_table" "elasticache_route_table" {
-  count  = "${length(keys(var.elasticache_subnets)) > 0 ? 1 : 0}"
+  count = "${length(keys(var.elasticache_subnets)) > 0 ? 1 : 0}"
   vpc_id = "${aws_vpc.vpc.id}"
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = "${aws_nat_gateway.nat_gw.0.id}"
-  }
   tags {
-    Name = "${var.environment}_${var.cluster_name}_private_elasticache_route"
+    Name = "${var.environment}_${var.cluster_name}_rds_route"
   }
 }
+
+resource "aws_route" "nat_gateway_to_elasticache_route_table" {
+  count = "${length(keys(var.elasticache_subnets)) > 0 ? 1 : 0}"
+  route_table_id         = "${aws_route_table.elasticache_route_table.0.id}"
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = "${aws_nat_gateway.nat_gw.0.id}"
+}
+
+
+resource "aws_route_table_association" "public_subnet" {
+  count          = "${length(var.public_subnets)}"
+  subnet_id      = "${element(aws_subnet.public_subnets.*.id, count.index)}"
+  route_table_id = "${aws_route_table.public_route_table.0.id}"
+}
+
+
 resource "aws_route_table_association" "private_subnet" {
   count          = "${length(var.private_subnets)}"
   subnet_id      = "${element(aws_subnet.private_subnets.*.id, count.index)}"
-  route_table_id = "${aws_route_table.private.0.id}"
+  route_table_id = "${aws_route_table.private_route_table.0.id}"
 }
 
 resource "aws_route_table_association" "rds_subnet" {
   count          = "${length(keys(var.rds_subnets))}"
   subnet_id      = "${element(aws_subnet.private_rds_subnets.*.id, count.index)}"
-  route_table_id = "${aws_route_table.rds.id}"
+  route_table_id = "${aws_route_table.rds_route_table.0.id}"
 }
 
 resource "aws_route_table_association" "elasticache_subnet" {
   count = "${length(keys(var.elasticache_subnets))}"
   subnet_id      = "${element(aws_subnet.private_elasticache_subnets.*.id, count.index)}"
-  route_table_id = "${aws_route_table.elasticache.id}"
+  route_table_id = "${aws_route_table.elasticache_route_table.0.id}"
 }
+
 #
 # VPC Peering connections
 #
 
 resource "aws_vpc_peering_connection" "peering" {
-  count         = "${length(var.vpc_to_connect)}"
+  count = "${length(keys(var.vpc_to_connect)) > 0 ? 1 : 0 }"
   peer_vpc_id   = "${var.vpc_to_connect["vpc_id"]}"
   vpc_id        = "${aws_vpc.vpc.id}"
   auto_accept   = true
 
   accepter {
-    allow_remote_vpc_dns_resolution  = true
-    allow_classic_link_to_remote_vpc = true
-    allow_vpc_to_remote_classic_link = true
+    allow_remote_vpc_dns_resolution = true
   }
 
   requester {
-    allow_remote_vpc_dns_resolution  = true
-    allow_classic_link_to_remote_vpc = true
-    allow_vpc_to_remote_classic_link = true
+    allow_remote_vpc_dns_resolution = true
   }
+
   tags = {
     Name = "${var.environment}_${var.cluster_name}_peering_${var.vpc_to_connect["vpc_id"]}"
   }
 }
 
-resource "aws_route" "route_peering_public" {
-  count                     = "${length(var.vpc_to_connect)}"
-  route_table_id            = "${aws_vpc.vpc.main_route_table_id}"
+resource "aws_route" "route_from_private_to_peering" {
+  count                     = "${length(keys(var.vpc_to_connect)) > 0 ? 1 : 0 }"
+  route_table_id            = "${aws_route_table.private_route_table.0.id}"
   destination_cidr_block    = "${var.vpc_to_connect["vpc_cidr"]}"
   vpc_peering_connection_id = "${aws_vpc_peering_connection.peering.0.id}"
   depends_on                = ["aws_vpc.vpc","aws_vpc_peering_connection.peering"]
 }
 
+
+resource "aws_route" "route_from_public_to_peering" {
+  count                     = "${length(keys(var.vpc_to_connect)) > 0 ? 1 : 0 }"
+  route_table_id            = "${aws_route_table.public_route_table.0.id}"
+  destination_cidr_block    = "${var.vpc_to_connect["vpc_cidr"]}"
+  vpc_peering_connection_id = "${aws_vpc_peering_connection.peering.0.id}"
+  depends_on                = ["aws_vpc.vpc","aws_vpc_peering_connection.peering"]
+}
+
+resource "aws_route" "route_from_elasticache_to_peering" {
+  count                     = "${length(keys(var.vpc_to_connect)) > 0 && length(keys(var.elasticache_subnets)) > 0  ? 1 : 0 }"
+  route_table_id            = "${aws_route_table.elasticache_route_table.0.id}"
+  destination_cidr_block    = "${var.vpc_to_connect["vpc_cidr"]}"
+  vpc_peering_connection_id = "${aws_vpc_peering_connection.peering.0.id}"
+  depends_on                = ["aws_vpc.vpc","aws_vpc_peering_connection.peering"]
+}
+
+
+resource "aws_route" "route_from_rds_to_peering" {
+  count                     = "${length(keys(var.vpc_to_connect)) > 0  && length(keys(var.rds_subnets)) > 0 ? 1 : 0 }"
+  route_table_id            = "${aws_route_table.rds_route_table.0.id}"
+  destination_cidr_block    = "${var.vpc_to_connect["vpc_cidr"]}"
+  vpc_peering_connection_id = "${aws_vpc_peering_connection.peering.0.id}"
+  depends_on                = ["aws_vpc.vpc","aws_vpc_peering_connection.peering"]
+}
+
+# Routes from accepter vpc to this requester vpc
+
+resource "aws_route" "route_from_accepter_private_to_peering" {
+  count                     = "${length(keys(var.vpc_to_connect)) > 0 ? 1 : 0 }"
+  route_table_id            = "${var.vpc_to_connect["private_route_table"]}"
+  destination_cidr_block    = "${var.vpc["cidr"]}"
+  vpc_peering_connection_id = "${aws_vpc_peering_connection.peering.0.id}"
+  depends_on                = ["aws_vpc.vpc","aws_vpc_peering_connection.peering"]
+}
+
+resource "aws_route" "route_from_accepter_public_to_peering" {
+  count                     = "${length(keys(var.vpc_to_connect)) > 0 ? 1 : 0 }"
+  route_table_id            = "${var.vpc_to_connect["public_route_table"]}"
+  destination_cidr_block    = "${var.vpc["cidr"]}"
+  vpc_peering_connection_id = "${aws_vpc_peering_connection.peering.0.id}"
+  depends_on                = ["aws_vpc.vpc","aws_vpc_peering_connection.peering"]
+}

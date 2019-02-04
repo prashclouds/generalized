@@ -9,17 +9,17 @@ module "vpc" {
   vpc_to_connect = "${local.vpc_to_connect}"
 }
 
-module "eks" {
-  source          = "modules/eks"
-  environment     = "${var.environment}"
-  cluster_name    = "${var.cluster_name}"
-  roleARN         = "${var.roleARN}"
-  worker          = "${var.worker}"
-  vpc_id          = "${module.vpc.vpc_id}"
-  private_subnets = "${module.vpc.private_subnets_ids}"
-  public_subnets  = "${module.vpc.public_subnets_ids}"
-  datadog_key     = "${data.aws_ssm_parameter.datadog_key.value}"
-}
+# module "eks" {
+#   source          = "modules/eks"
+#   environment     = "${var.environment}"
+#   cluster_name    = "${var.cluster_name}"
+#   roleARN         = "${var.roleARN}"
+#   worker          = "${var.worker}"
+#   vpc_id          = "${module.vpc.vpc_id}"
+#   private_subnets = "${module.vpc.private_subnets_ids}"
+#   public_subnets  = "${module.vpc.public_subnets_ids}"
+#   datadog_key     = "${data.aws_ssm_parameter.datadog_key.value}"
+# }
 
 # module "rds" {
 #   source              = "modules/rds"
@@ -42,8 +42,8 @@ module "eks" {
 #   environment         = "${var.environment}"
 # }
 
-module "iam" {
-  source                = "modules/iam"
-  environment           = "${var.environment}"
-  kubernetes_worker_arn = "${module.eks.kubernetes_worker_arn}"
-}
+# module "iam" {
+#   source                = "modules/iam"
+#   environment           = "${var.environment}"
+#   kubernetes_worker_arn = "${module.eks.kubernetes_worker_arn}"
+# }
