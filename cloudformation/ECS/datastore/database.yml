@@ -1,0 +1,121 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "This template creates a Postgres RDS Instance"
+
+Parameters:
+  DBName:
+    Description: DataBase Name
+    Type: String
+  DBUser:
+    Description: DataBase User
+    Type: String
+    NoEcho: true
+  DBPassword:
+    Description: DataBase Password
+    Type: String
+    NoEcho: true
+  DBClass:
+    Description: DataBase Class
+    Type: String
+    Default: db.t2.small
+  DBAllocatedStorage:
+    Description: The amount of storage (in GB) to allocate to the DB Instance.
+    Type: Number
+  VpcCidr:
+    Type: String
+  VPCId:
+    Description: VPC Id
+    Type: AWS::EC2::VPC::Id
+  SubnetIds:
+    Type: CommaDelimitedList
+  Environment:
+    Type: String
+    Description: "Environment platform, this parameter will be used to name the resources ."
+    Default: development
+    AllowedValues:
+      - production
+      - cproduction
+      - staging
+      - development
+  StackName:
+    Type: String
+    Description: "This name will be used to named the resources"
+
+Resources:
+  DBKey:
+    Type: AWS::KMS::Key
+    Properties:
+      KeyPolicy:
+        Version: 2012-10-17
+        Id: key-default-1
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Join 
+                - ''
+                - - 'arn:aws:iam::'
+                  - !Ref 'AWS::AccountId'
+                  - ':root'
+            Action: 'kms:*'
+            Resource: '*'
+
+  DBEC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Open database for access
+      VpcId: !Ref VPCId
+      Tags:
+        - Key: StackName
+          Value: !Sub ${StackName}-${Environment}
+        - Key: Environment
+          Value: !Ref Environment
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          CidrIp: !Ref VpcCidr
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: -1
+          IpProtocol: '-1'
+          ToPort: -1
+
+  DBInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBName: !Ref DBName
+      Engine: postgres
+      MultiAZ: false
+      MasterUsername: !Ref DBUser
+      DBInstanceClass: !Ref DBClass
+      DBSubnetGroupName: !Ref SubnetGroup
+      DBInstanceIdentifier: !Sub ${StackName}-${Environment}
+      AllocatedStorage: !Ref DBAllocatedStorage
+      MasterUserPassword: !Ref DBPassword
+      DeletionProtection: true
+      PubliclyAccessible: false
+      VPCSecurityGroups:
+        - !Ref DBEC2SecurityGroup
+      StorageType: 'gp2'
+      BackupRetentionPeriod: '7'
+      PreferredBackupWindow: '21:30-22:00'
+      StorageEncrypted: true
+      CopyTagsToSnapshot: true
+      StorageEncrypted: true
+      KmsKeyId: !GetAtt DBKey.Arn
+      Tags:
+        - Key: StackName
+          Value: !Sub ${StackName}-${Environment}
+        - Key: Environment
+          Value: !Ref Environment
+
+  SubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: !Ref AWS::StackName
+      SubnetIds: !Ref SubnetIds
+
+Outputs:
+  DBEndpoint:
+    Description: DataBase Endpoint
+    Value: !GetAtt DBInstance.Endpoint.Address

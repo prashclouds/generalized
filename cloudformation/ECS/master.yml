@@ -5,6 +5,24 @@ Parameters:
   AvailabilityZones:
     Type: "List<AWS::EC2::AvailabilityZone::Name>"
     Description: "List of Availability Zones to use for the subnets in the VPC. Note: The logical order is preserved. 1 or 3 AZs are used for this deployment."
+  DBName:
+    Description: DataBase Name
+    Type: String
+  DBUser:
+    Description: DataBase User
+    Type: String
+    NoEcho: true
+  DBPassword:
+    Description: DataBase Password
+    Type: String
+    NoEcho: true
+  DBClass:
+    Description: DataBase Class
+    Type: String
+    Default: db.t2.small
+  DBAllocatedStorage:
+    Description: The amount of storage (in GB) to allocate to the DB Instance.
+    Type: Number
   ContainerPort:
     Type: Number
     Description: Container port of application
@@ -184,6 +202,26 @@ Resources:
         TargetGroupArn: !GetAtt ALBStack.Outputs.TargetGroupArn
         RedisHost: !GetAtt RedisStack.Outputs.ElastiCacheCluster
         DataDogAPIKey: !Ref DataDogAPIKey
+      Tags:
+        - Key: StackName
+          Value: !Sub ${StackName}-${Environment}
+
+  DBStack:
+    Type: AWS::CloudFormation::Stack
+    DeletionPolicy: Retain
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/datastore/database.yml"
+      Parameters:
+        DBName: !Ref DBName
+        DBUser: !Ref DBUser
+        DBPassword: !Ref DBPassword
+        DBClass: !Ref DBClass
+        DBAllocatedStorage: !Ref DBAllocatedStorage
+        VPCId: !GetAtt VPCStack.Outputs.VPCID
+        VpcCidr: !GetAtt VPCStack.Outputs.VPCCIDR
+        SubnetIds: !Join [ ",", [!GetAtt [VPCStack, Outputs.PrivateSubnet1AID], !GetAtt [VPCStack, Outputs.PrivateSubnet2AID]]]
+        Environment: !Ref Environment
+        StackName: !Ref StackName
       Tags:
         - Key: StackName
           Value: !Sub ${StackName}-${Environment}
