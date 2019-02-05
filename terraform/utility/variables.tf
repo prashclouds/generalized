@@ -1,7 +1,7 @@
 variable "region" {
   type = "string"
   description = "aws region"
-  default = "us-east-1"
+  default = "us-west-2"
 }
 variable "param_prefix" {
   type = "string"

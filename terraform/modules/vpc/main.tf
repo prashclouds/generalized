@@ -219,19 +219,17 @@ resource "aws_route_table_association" "elasticache_subnet" {
 }
 
 #
-# VPC Peering connections
+# VPC Peering connection in same region
 #
 
 resource "aws_vpc_peering_connection" "peering" {
-  count         = "${length(keys(var.vpc_to_connect)) > 0 ? 1 : 0 }"
+  count         = "${length(keys(var.vpc_to_connect)) > 0 ? 1 : 0}"
   peer_vpc_id   = "${var.vpc_to_connect["vpc_id"]}"
   vpc_id        = "${aws_vpc.vpc.id}"
   auto_accept   = true
-  peer_region   = "${var.vpc_to_connect["vpc_region"]}"
   accepter {
     allow_remote_vpc_dns_resolution = true
   }
-
   requester {
     allow_remote_vpc_dns_resolution = true
   }
@@ -242,7 +240,7 @@ resource "aws_vpc_peering_connection" "peering" {
 }
 
 resource "aws_route" "route_from_private_to_peering" {
-  count                     = "${length(keys(var.vpc_to_connect)) > 0 ? 1 : 0 }"
+  count                     = "${length(keys(var.vpc_to_connect)) > 0? 1:0}"
   route_table_id            = "${aws_route_table.private_route_table.0.id}"
   destination_cidr_block    = "${var.vpc_to_connect["vpc_cidr"]}"
   vpc_peering_connection_id = "${aws_vpc_peering_connection.peering.0.id}"
@@ -251,15 +249,14 @@ resource "aws_route" "route_from_private_to_peering" {
 
 
 resource "aws_route" "route_from_public_to_peering" {
-  count                     = "${length(keys(var.vpc_to_connect)) > 0 ? 1 : 0 }"
+  count                     = "${length(keys(var.vpc_to_connect)) > 0 ? 1:0}"
   route_table_id            = "${aws_route_table.public_route_table.0.id}"
   destination_cidr_block    = "${var.vpc_to_connect["vpc_cidr"]}"
   vpc_peering_connection_id = "${aws_vpc_peering_connection.peering.0.id}"
   depends_on                = ["aws_vpc.vpc","aws_vpc_peering_connection.peering"]
 }
-
 resource "aws_route" "route_from_elasticache_to_peering" {
-  count                     = "${length(keys(var.vpc_to_connect)) > 0 && length(var.elasticache_subnets) > 0  ? 1 : 0 }"
+  count                     = "${length(keys(var.vpc_to_connect)) > 0 && length(var.elasticache_subnets) > 0 ? 1 : 0  }"
   route_table_id            = "${aws_route_table.elasticache_route_table.0.id}"
   destination_cidr_block    = "${var.vpc_to_connect["vpc_cidr"]}"
   vpc_peering_connection_id = "${aws_vpc_peering_connection.peering.0.id}"
@@ -268,7 +265,7 @@ resource "aws_route" "route_from_elasticache_to_peering" {
 
 
 resource "aws_route" "route_from_rds_to_peering" {
-  count                     = "${length(keys(var.vpc_to_connect)) > 0  && length(var.rds_subnets) > 0 ? 1 : 0 }"
+  count                     = "${length(keys(var.vpc_to_connect)) > 0  && length(var.rds_subnets) >0 ? 1 : 0 }"
   route_table_id            = "${aws_route_table.rds_route_table.0.id}"
   destination_cidr_block    = "${var.vpc_to_connect["vpc_cidr"]}"
   vpc_peering_connection_id = "${aws_vpc_peering_connection.peering.0.id}"
@@ -278,7 +275,7 @@ resource "aws_route" "route_from_rds_to_peering" {
 # Routes from accepter vpc to this requester vpc
 
 resource "aws_route" "route_from_accepter_private_to_peering" {
-  count                     = "${length(keys(var.vpc_to_connect)) > 0 ? 1 : 0 }"
+  count                     = "${length(keys(var.vpc_to_connect)) > 0? 1 : 0 }"
   route_table_id            = "${var.vpc_to_connect["private_route_table"]}"
   destination_cidr_block    = "${var.vpc["cidr"]}"
   vpc_peering_connection_id = "${aws_vpc_peering_connection.peering.0.id}"
