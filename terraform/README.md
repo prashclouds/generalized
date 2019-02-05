@@ -10,6 +10,9 @@
 
 Move inside the vpc directory, modify the variables.tf and make sure that the vpcs will reside into the same region and the CIDR block must be different for each vpc, otherwise you wont be able to create a vpc peering.
 Modify the key_name variable with the name of your pem key that you will use to connect to the openvpn server.
+Modify the openvpn username and password, preferable use aws parameter store to retrieve these values.
+Once the terraform is deployed the vpn server will need to be set up 
+https://openvpn.net/vpn-server-resources/amazon-web-services-ec2-tiered-appliance-quick-start-guide/
 ```sh
 cd utility/
 terraform init
