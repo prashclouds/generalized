@@ -14,6 +14,6 @@ resource "aws_db_instance" "db_qa" {
   vpc_security_group_ids    = ["${var.db_security_groups_id}"]
   db_subnet_group_name      = "${var.db_subnet_group}"
   final_snapshot_identifier = "${var.environment}-${var.cluster_name}-latest"
-  parameter_group_name      = "utf-8-encoding"
+  //parameter_group_name      = "utf-8-encoding"
 }
 
