@@ -22,6 +22,20 @@ terraform apply
 
 Once the utility vpc is deployed, go back to the folder above and make sure that your backend configuration files are set properly, these files are located inside the config folder, make sure that the bucket and dynamo table exist, the dynamo table must have the string key `LockID`.
 
+Modify the remote_state.tf file and make sure that the settings match with the `utility/provider.tf`, this is used to retrieve the outputs of the utility vpc and create the peering connection.
+```sh
+data "terraform_remote_state" "utility" {
+  backend = "s3"
+  config ={
+    bucket  = "unitq-terraform-development"
+    key     = "backend-utility.tfstate"
+    encrypt = true
+    region  = "us-east-1"
+    dynamodb_table = "terraform-lock"
+  }
+}
+```
+
 Modify your environment parameters on the tfvars file inside the config folder, make sure that your vpc CIDR does not overlaps between environments, add the name of your pem key to the worker map variable.
 
 Make sure to replace roleARN variable with the role you want to assign for the users that will have access to the EKS cluster through kubectl
