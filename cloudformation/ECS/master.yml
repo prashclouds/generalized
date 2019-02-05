@@ -97,7 +97,19 @@ Resources:
       Tags:
         - Key: StackName
           Value: !Sub ${StackName}-${Environment}
-    
+
+  S3Bucket:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/datastore/s3.yml"
+      Parameters:
+        Environment: !Ref Environment
+        ServiceName: "my-app"
+        StackName: !Ref StackName
+      Tags:
+        - Key: StackName
+          Value: !Sub ${StackName}-${Environment}
+
   ALBStack:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -107,6 +119,9 @@ Resources:
         SubnetIds: !Join [ ",", [!GetAtt [VPCStack, Outputs.PublicSubnet1ID], !GetAtt [VPCStack, Outputs.PublicSubnet2ID]]]
         VpcId: !GetAtt VPCStack.Outputs.VPCID
         ContainerPort: !Ref ContainerPort
+        S3BucketLogs: !GetAtt S3Bucket.Outputs.BucketName
+        Environment: !Ref Environment
+        StackName: !Ref StackName
       Tags:
         - Key: StackName
           Value: !Sub ${StackName}-${Environment}
@@ -129,6 +144,8 @@ Resources:
         KeyPair: !Ref KeyPair
         SubnetIds: !Join [ ",", [!GetAtt [VPCStack, Outputs.PrivateSubnet1AID], !GetAtt [VPCStack, Outputs.PrivateSubnet2AID]]]
         VpcId: !GetAtt VPCStack.Outputs.VPCID
+        Environment: !Ref Environment
+        StackName: !Ref StackName
       Tags:
         - Key: StackName
           Value: !Sub ${StackName}-${Environment}
@@ -141,9 +158,12 @@ Resources:
         VPCSubnets: !Join [ ",", [!GetAtt [VPCStack, Outputs.PrivateSubnet1AID], !GetAtt [VPCStack, Outputs.PrivateSubnet2AID]]]
         VpcId: !GetAtt VPCStack.Outputs.VPCID
         StackName: !Ref StackName
+        Environment: !Ref Environment
       Tags:
         - Key: StackName
           Value: !Sub ${StackName}-${Environment}
+  
+  
 
   MyApp:
     DependsOn:

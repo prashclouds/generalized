@@ -11,6 +11,15 @@ Parameters:
     Type: String
     Default: demo
     Description: "This name will be used to named the resources"
+  Environment:
+    Type: String
+    Description: "Environment platform, this parameter will be used to name the resources ."
+    Default: development
+    AllowedValues:
+      - production
+      - cproduction
+      - staging
+      - development
 
 Resources:
 
@@ -30,6 +39,8 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub elasticache-ecs-sg-${StackName}
+        - Key: StackName
+          Value: !Sub ${StackName}-${Environment}
 
   SubnetGroup:
       Type: "AWS::ElastiCache::SubnetGroup"

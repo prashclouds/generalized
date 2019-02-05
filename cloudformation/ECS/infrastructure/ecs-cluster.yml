@@ -50,6 +50,18 @@ Parameters:
     Description: AMI ID
     Type: AWS::SSM::Parameter::Value<String>
     Default: /aws/service/ecs/optimized-ami/amazon-linux/recommended/image_id
+  Environment:
+    Type: String
+    Description: "Environment platform, this parameter will be used to name the resources ."
+    Default: development
+    AllowedValues:
+      - production
+      - cproduction
+      - staging
+      - development
+  StackName:
+    Type: String
+    Description: "This name will be used to named the resources"
 
 Resources:
   EcsCluster:
@@ -128,6 +140,8 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${ClusterName}-${AWS::Region}
+        - Key: StackName
+          Value: !Sub ${StackName}-${Environment}
 
   EcsAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
@@ -151,6 +165,9 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${ClusterName}-ECS
+          PropagateAtLaunch: true
+        - Key: StackName
+          Value: !Sub ${StackName}-${Environment}
           PropagateAtLaunch: true
 
   EcsLaunchConfiguration:
