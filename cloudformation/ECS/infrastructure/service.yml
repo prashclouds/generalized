@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "ECS Services"
+
+Parameters:
+  Environment:
+    Type: String
+    Description: "Environment platform, this parameter will be used to name the resources ."
+    Default: development
+    AllowedValues:
+      - production
+      - cproduction
+      - staging
+      - development
+  DesiredCount:
+    Type: Number
+    Default: 0
+    Description: "Desired count of containers."
+  StackName:
+    Type: String
+    Description: "This name will be used to named the resources"
+  QSS3BucketName:
+    AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
+    Type: String
+    ConstraintDescription: "Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
+    Description: "S3 bucket name for the Quick Start assets. Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
+  Cluster:
+    Description: ECS Cluster name
+    Type: String
+  ContainerPort:
+    Description: Specific port where the service is listening.
+    Type: Number
+  DataDogAPIKey:
+    Type: String
+    Description: API Key of the DataDog Account
+  LoadBalancerHttpListenerArn:
+    Description: Load Balancer HTTP Listerner ARN
+    Type: String
+    Default: AWS::NoValue
+  LoadBalancerHttpsListenerArn:
+    Description: Load Balancer HTTPS Listerner ARN
+    Type: String
+    Default: AWS::NoValue
+  QSS3KeyPrefix:
+    AllowedPattern: "^[0-9a-zA-Z-/]*$"
+    Default: "ECS-Monitoring"
+    Type: String
+    ConstraintDescription: "Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/)."
+    Description: "S3 key prefix for the Quick Start assets. Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/). It cannot start or end with a hyphen (-)."
+  ServiceName:
+    Description: Service Name
+    Type: String
+  MinimumHealthyPercent:
+    Type: Number
+    Description: "Minimum Healthy Percent for ECS services"
+    Default: 0
+    MinValue: 0
+    MaxValue: 100
+  TargetGroupArn:
+    Type: String
+  RedisHost:
+    Type: String
+    Default: "asdf"
+
+Resources:
+  TaskDefinition:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/infrastructure/taskdefinition.yml"
+      TimeoutInMinutes: 60
+      Parameters:
+        ServiceName: !Ref ServiceName
+        StackName: !Ref StackName
+        Environment: !Ref Environment
+        ContainerPort: !Ref ContainerPort
+        RedisHost: !Ref RedisHost
+        DataDogAPIKey: !Ref DataDogAPIKey
+
+  Service:
+    DependsOn:
+      - TaskDefinition
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref Cluster
+      DesiredCount: !Ref DesiredCount
+      TaskDefinition: !GetAtt TaskDefinition.Outputs.TaskDefinition
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: !Ref MinimumHealthyPercent
+      LoadBalancers:
+        - ContainerName: !Sub ${ServiceName}-${Environment}
+          TargetGroupArn: !Ref TargetGroupArn
+          ContainerPort: !Ref ContainerPort
+      ServiceName: !Sub ${ServiceName}-${Environment}

@@ -1,0 +1,169 @@
+Description: >
+  ECS Cluster with monitoring tools, including DataDog, CloudWatch Logs and Systems Manager.
+
+Parameters:
+  AvailabilityZones:
+    Type: "List<AWS::EC2::AvailabilityZone::Name>"
+    Description: "List of Availability Zones to use for the subnets in the VPC. Note: The logical order is preserved. 1 or 3 AZs are used for this deployment."
+  ContainerPort:
+    Type: Number
+    Description: Container port of application
+    Default: 5000
+  ClusterName:
+    Type: String
+    Description: Name for the ECS Cluster
+  DataDogAPIKey:
+    Type: String
+    Description: API Key of the DataDog Account
+    Default: 183b3983fbe733ff45fcbc04afee25d6
+  DesiredCapacity:
+    Type: Number
+    Default: '1'
+    Description: Number of instances to launch in your ECS cluster.
+  DesiredCount:
+    Type: Number
+    Default: 0
+    Description: Desired count of containers to launch into the ECS cluster.
+  Environment:
+    Type: String
+    Default: development
+    AllowedValues:
+      - production
+      - cproduction
+      - staging
+      - development
+  InstanceType:
+    Description: EC2 instance type
+    Type: String
+    Default: t2.micro
+    AllowedValues: [t2.micro, t2.small, t2.medium, t2.large, m3.medium, m3.large,
+      m3.xlarge, m3.2xlarge, m4.large, m4.xlarge, m4.2xlarge, m4.4xlarge, m4.10xlarge,
+      c4.large, c4.xlarge, c4.2xlarge, c4.4xlarge, c4.8xlarge, c3.large, c3.xlarge,
+      c3.2xlarge, c3.4xlarge, c3.8xlarge, r3.large, r3.xlarge, r3.2xlarge, r3.4xlarge,
+      r3.8xlarge, i2.xlarge, i2.2xlarge, i2.4xlarge, i2.8xlarge]
+    ConstraintDescription: Please choose a valid instance type.
+  KeyPair:
+    Type: "AWS::EC2::KeyPair::KeyName"
+    Description: "Public/private key pairs allow you to securely connect to your instance after it launches"
+  MaxSize:
+    Type: Number
+    Default: '1'
+    Description: Maximum number of instances that can be launched in your ECS cluster.
+  NumberOfAZs:
+    Default: 3
+    AllowedValues:
+      - 2
+      - 3
+    Description: "Number of Availability Zones to use in the VPC. This must match your selections in the list of Availability Zones parameter."
+    Type: String
+  QSS3BucketName:
+    AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
+    Default: "hugo-orozco"
+    Type: String
+    ConstraintDescription: "Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
+    Description: "S3 bucket name for the Quick Start assets. Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
+  QSS3KeyPrefix:
+    AllowedPattern: "^[0-9a-zA-Z-/]*$"
+    Default: "ECS-Monitoring"
+    Type: String
+    ConstraintDescription: "Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/)."
+    Description: "S3 key prefix for the Quick Start assets. Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/). It cannot start or end with a hyphen (-)."
+  ServiceName:
+    Description: Service Name
+    Type: String
+    Default: my-app
+  StackName:
+    Type: String
+    Default: demo
+    Description: "This name will be used to named the resources"
+  VPCCIDR:
+    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
+    Default: 10.175.0.0/16
+    Type: String
+    ConstraintDescription: "CIDR block parameter must be in the form x.x.x.x/16-28"
+    Description: "CIDR Block for the VPC"
+
+Resources: 
+  VPCStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/network/vpc.yml"
+      Parameters:
+        AvailabilityZones: !Join [",", !Ref AvailabilityZones]
+        NumberOfAZs: !Ref NumberOfAZs
+        VPCCIDR: !Ref VPCCIDR
+        StackName: !Ref StackName
+        Environment: !Ref Environment
+      Tags:
+        - Key: StackName
+          Value: !Sub ${StackName}-${Environment}
+    
+  ALBStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/infrastructure/loadbalancer.yml"
+      Parameters:
+        LoadBalancerName: !Sub loadbalancer-${StackName}-${Environment}
+        SubnetIds: !Join [ ",", [!GetAtt [VPCStack, Outputs.PublicSubnet1ID], !GetAtt [VPCStack, Outputs.PublicSubnet2ID]]]
+        VpcId: !GetAtt VPCStack.Outputs.VPCID
+        ContainerPort: !Ref ContainerPort
+      Tags:
+        - Key: StackName
+          Value: !Sub ${StackName}-${Environment}
+
+  
+  EcsStack:
+    DependsOn:
+      - VPCStack
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/infrastructure/ecs-cluster.yml"
+      Parameters:
+        ALBDNS: !GetAtt ALBStack.Outputs.LoadBalancerDomain
+        ClusterName: !Sub ${StackName}-${Environment}
+        DataDogAPIKey: !Ref DataDogAPIKey
+        DesiredCapacity: 1
+        MinSize: 1
+        MinInstancesInService: 0
+        InstanceType: !Ref InstanceType
+        KeyPair: !Ref KeyPair
+        SubnetIds: !Join [ ",", [!GetAtt [VPCStack, Outputs.PrivateSubnet1AID], !GetAtt [VPCStack, Outputs.PrivateSubnet2AID]]]
+        VpcId: !GetAtt VPCStack.Outputs.VPCID
+      Tags:
+        - Key: StackName
+          Value: !Sub ${StackName}-${Environment}
+  
+  RedisStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/datastore/elasticache.yml"
+      Parameters:
+        VPCSubnets: !Join [ ",", [!GetAtt [VPCStack, Outputs.PrivateSubnet1AID], !GetAtt [VPCStack, Outputs.PrivateSubnet2AID]]]
+        VpcId: !GetAtt VPCStack.Outputs.VPCID
+        StackName: !Ref StackName
+      Tags:
+        - Key: StackName
+          Value: !Sub ${StackName}-${Environment}
+
+  MyApp:
+    DependsOn:
+      - RedisStack
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/infrastructure/service.yml"
+      Parameters:
+        ServiceName: "my-app" # This name must match the 'services' template file YAML
+        Environment: !Ref Environment
+        DesiredCount: !Ref DesiredCount
+        StackName: !Ref StackName
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
+        Cluster: !GetAtt EcsStack.Outputs.EcsCluster
+        ContainerPort: !Ref ContainerPort
+        MinimumHealthyPercent: 0
+        TargetGroupArn: !GetAtt ALBStack.Outputs.TargetGroupArn
+        RedisHost: !GetAtt RedisStack.Outputs.ElastiCacheCluster
+        DataDogAPIKey: !Ref DataDogAPIKey
+      Tags:
+        - Key: StackName
+          Value: !Sub ${StackName}-${Environment}

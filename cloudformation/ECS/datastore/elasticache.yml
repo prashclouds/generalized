@@ -1,0 +1,56 @@
+Description:
+  ElastiCache Service for the API
+
+Parameters:
+  VPCSubnets:
+    Type: List<AWS::EC2::Subnet::Id>
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC-ID of your existing Virtual Private Cloud (VPC).
+  StackName:
+    Type: String
+    Default: demo
+    Description: "This name will be used to named the resources"
+
+Resources:
+
+  ElastiCacheSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security Group for the ElastiCache Service to give access to the EC2 Instances
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 0
+        ToPort: 65535
+        CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+      - CidrIp: 0.0.0.0/0
+        IpProtocol: '-1'
+      Tags:
+        - Key: Name
+          Value: !Sub elasticache-ecs-sg-${StackName}
+
+  SubnetGroup:
+      Type: "AWS::ElastiCache::SubnetGroup"
+      Properties:
+        CacheSubnetGroupName: Subnetgroup
+        Description: Subnet group for redis
+        SubnetIds: !Ref VPCSubnets
+  
+  ElastiCacheCluster:
+    Type: AWS::ElastiCache::CacheCluster
+    Properties:
+      AutoMinorVersionUpgrade: "true"
+      Engine: "redis"
+      CacheNodeType: "cache.t2.micro"
+      CacheSubnetGroupName: !Ref SubnetGroup
+      ClusterName: ECSRedisCluster
+      NumCacheNodes: "1"
+      VpcSecurityGroupIds:
+        - !Ref ElastiCacheSecurityGroup
+        
+Outputs:
+    ElastiCacheCluster:
+        Description: ElasticCacheCluster Endpoint
+        Value: !GetAtt ElastiCacheCluster.RedisEndpoint.Address
