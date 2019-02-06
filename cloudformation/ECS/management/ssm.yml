@@ -108,8 +108,8 @@ Resources:
                 "Install"
               ]
             }
-          OutputS3BucketName: String
-          OutputS3KeyPrefix: String
+          # OutputS3BucketName: String
+          # OutputS3KeyPrefix: String
       WindowId: !Ref MaintenanceWindow
       TaskType: RUN_COMMAND
     DependsOn: MaintenanceWindow

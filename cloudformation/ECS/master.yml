@@ -8,14 +8,14 @@ Parameters:
   DBName:
     Description: DataBase Name
     Type: String
-  DBUser:
-    Description: DataBase User
-    Type: String
-    NoEcho: true
-  DBPassword:
-    Description: DataBase Password
-    Type: String
-    NoEcho: true
+  # DBUser:
+  #   Description: DataBase User
+  #   Type: String
+  #   NoEcho: true
+  # DBPassword:
+  #   Description: DataBase Password
+  #   Type: String
+  #   NoEcho: true
   DBClass:
     Description: DataBase Class
     Type: String
@@ -30,10 +30,10 @@ Parameters:
   ClusterName:
     Type: String
     Description: Name for the ECS Cluster
-  DataDogAPIKey:
-    Type: String
-    Description: API Key of the DataDog Account
-    Default: 183b3983fbe733ff45fcbc04afee25d6
+  # DataDogAPIKey:
+  #   Type: String
+  #   Description: API Key of the DataDog Account
+  #   Default: 183b3983fbe733ff45fcbc04afee25d6
   DesiredCapacity:
     Type: Number
     Default: '1'
@@ -154,7 +154,7 @@ Resources:
       Parameters:
         ALBDNS: !GetAtt ALBStack.Outputs.LoadBalancerDomain
         ClusterName: !Sub ${StackName}-${Environment}
-        DataDogAPIKey: !Ref DataDogAPIKey
+        # DataDogAPIKey: !Ref DataDogAPIKey
         DesiredCapacity: 1
         MinSize: 1
         MinInstancesInService: 0
@@ -180,8 +180,6 @@ Resources:
       Tags:
         - Key: StackName
           Value: !Sub ${StackName}-${Environment}
-  
-  
 
   MyApp:
     DependsOn:
@@ -201,7 +199,7 @@ Resources:
         MinimumHealthyPercent: 0
         TargetGroupArn: !GetAtt ALBStack.Outputs.TargetGroupArn
         RedisHost: !GetAtt RedisStack.Outputs.ElastiCacheCluster
-        DataDogAPIKey: !Ref DataDogAPIKey
+        # DataDogAPIKey: !Ref DataDogAPIKey
       Tags:
         - Key: StackName
           Value: !Sub ${StackName}-${Environment}
@@ -213,8 +211,8 @@ Resources:
       TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/datastore/database.yml"
       Parameters:
         DBName: !Ref DBName
-        DBUser: !Ref DBUser
-        DBPassword: !Ref DBPassword
+        # DBUser: !Ref DBUser
+        # DBPassword: !Ref DBPassword
         DBClass: !Ref DBClass
         DBAllocatedStorage: !Ref DBAllocatedStorage
         VPCId: !GetAtt VPCStack.Outputs.VPCID
@@ -230,7 +228,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     DeletionPolicy: Retain
     Properties:
-      TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/datastore/ssm.yml"
+      TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/management/ssm.yml"
       Parameters:
         Environment: !Ref Environment
         StackName: !Ref StackName

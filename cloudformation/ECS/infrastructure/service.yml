@@ -30,8 +30,9 @@ Parameters:
     Description: Specific port where the service is listening.
     Type: Number
   DataDogAPIKey:
-    Type: String
+    Type: AWS::SSM::Parameter::Value<String>
     Description: API Key of the DataDog Account
+    Default: /ECS/ddApi
   LoadBalancerHttpListenerArn:
     Description: Load Balancer HTTP Listerner ARN
     Type: String
