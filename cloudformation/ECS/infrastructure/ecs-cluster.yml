@@ -170,6 +170,9 @@ Resources:
         - Key: StackName
           Value: !Sub ${StackName}-${Environment}
           PropagateAtLaunch: true
+        - Key: Patch Group
+          Value: AMZ-Linux
+          PropagateAtLaunch: true
 
   EcsLaunchConfiguration:
     Type: AWS::AutoScaling::LaunchConfiguration

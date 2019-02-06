@@ -5,14 +5,14 @@ Parameters:
   DBName:
     Description: DataBase Name
     Type: String
-  DBUser:
-    Description: DataBase User
-    Type: String
-    NoEcho: true
-  DBPassword:
-    Description: DataBase Password
-    Type: String
-    NoEcho: true
+  # DBUser:
+  #   Description: DataBase User
+  #   Type: String
+  #   Default: 
+  # DBPassword:
+  #   Description: DataBase Password
+  #   Type: String
+  #   NoEcho: true
   DBClass:
     Description: DataBase Class
     Type: String
@@ -86,7 +86,7 @@ Resources:
       DBName: !Ref DBName
       Engine: postgres
       MultiAZ: false
-      MasterUsername: !Ref DBUser
+      MasterUsername: '{{resolve:ssm:/ECS/db/MasterUsername:1}}'
       DBInstanceClass: !Ref DBClass
       DBSubnetGroupName: !Ref SubnetGroup
       DBInstanceIdentifier: !Sub ${StackName}-${Environment}
