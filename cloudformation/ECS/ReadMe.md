@@ -13,11 +13,35 @@ To Spin up an aplication on ECS you need to define a Service and Tasks Definitio
 - A task definition is the way you define the docker containers that you want to run. You specify some parameters like the image, roles, and cpu and memory to use with each task.
 
 ## EC2
-With ECS running on EC2 instances you are responsible of deploying the required infrastructure. You need to configure an AutoScaling Group and a Load Balancer.
+With ECS running on EC2 instances you are responsible of deploying the required infrastructure. You need to configure and manage the EC2 instances and the scaling policies.
 
 ![ECS](images/ecs.png)
 
-The benefits of using ECS EC2 is that you have more control over the instances and you can make use of the spot and reserved instances option so it's less expensive than using Fargate.
+### ECS vs Fargate pricing
+#### EC2
+Using a scenario of an ECS cluster running 1 month
+- 342 tasks
+- 26 Instances m4.xlarge (4vCPU and 16GB at $0.2/h)
+
+```The cost is $3,744```
+
+#### Fargate
+Using the same scenario:
+- 0.25vCPU per Task
+- 0.58 GB
+
+At a price of:
+- vCPU $0.04048/h
+- GB $0.004445/h
+
+```The cost is $3,126```
+
+When using on demand instances the price of a Fargate cluster is less than the ECS cluster usin EC2, but we have to take into account that with EC2 we can make use of the reserved instances that reduces the cost around a 60%
+
+### Choosing EC2 or Fargate
+Choosing one or another depends on the needs of every organization
+- Fargate reduces time of development by focusing on the application and allows to scale faster
+- EC2 provides more control over the EC2 instances to support compliance and governance requirements, or broader customization options
 
 ## Monitorig
 This templates uses different ways to monitor the application and infrastructure associated with it, following nclouds best practices.
