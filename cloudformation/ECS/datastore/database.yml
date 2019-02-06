@@ -91,7 +91,7 @@ Resources:
       DBSubnetGroupName: !Ref SubnetGroup
       DBInstanceIdentifier: !Sub ${StackName}-${Environment}
       AllocatedStorage: !Ref DBAllocatedStorage
-      MasterUserPassword: !Ref DBPassword
+      MasterUserPassword: '{{resolve:ssm-secure:/ECS/db/MasterUserPassword:1}}'
       DeletionProtection: true
       PubliclyAccessible: false
       VPCSecurityGroups:

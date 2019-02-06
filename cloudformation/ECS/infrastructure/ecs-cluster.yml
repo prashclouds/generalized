@@ -8,8 +8,9 @@ Parameters:
   ClusterName:
     Type: String
   DataDogAPIKey:
-    Type: String
-    Description: API Key of the DataDog Account
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: API Key of the DataDog Account on Parameter Store
+    Default: /ECS/ddApi
   DesiredCapacity:
     Type: String
     Default: 2
