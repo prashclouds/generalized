@@ -225,3 +225,15 @@ Resources:
       Tags:
         - Key: StackName
           Value: !Sub ${StackName}-${Environment}
+
+  SSMStack:
+    Type: AWS::CloudFormation::Stack
+    DeletionPolicy: Retain
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/datastore/ssm.yml"
+      Parameters:
+        Environment: !Ref Environment
+        StackName: !Ref StackName
+      Tags:
+        - Key: StackName
+          Value: !Sub ${StackName}-${Environment}

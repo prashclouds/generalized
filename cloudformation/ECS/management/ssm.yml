@@ -1,0 +1,118 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Resources to manage patches in a manteinance window with
+  System Manager
+Parameters:
+  Environment:
+    Type: String
+    Default: development
+    AllowedValues:
+      - production
+      - cproduction
+      - staging
+      - development
+  StackName:
+    Type: String
+    Default: demo
+    Description: This name will be used to named the resources
+Resources:
+  ############### Roles ##############
+  MaintenanceWindowRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: "/"
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonSSMMaintenanceWindowRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - ec2.amazonaws.com
+            - ssm.amazonaws.com
+          Action:
+          - sts:AssumeRole
+  ########## Patch Baseline ##########
+  PatchBaseline:
+    Type: AWS::SSM::PatchBaseline
+    Properties:
+      Name: Amazon_Linux_PatchBaseline
+      Description: Patch Baseline for Amazon Linux Instances following nclouds policies
+      OperatingSystem: AMAZON_LINUX
+      PatchGroups:
+        - AMZ-Linux
+      ApprovalRules:
+        PatchRules:
+        - ApproveAfterDays: 0
+          ComplianceLevel: CRITICAL
+          EnableNonSecurity: true
+          PatchFilterGroup:
+            PatchFilters:
+            - Key: PRODUCT
+              Values:
+              - '*'
+            - Key: CLASSIFICATION
+              Values:
+              - Security
+              - Bugfix
+              - Enhancement
+              - Recommended
+            - Key: SEVERITY
+              Values:
+              - Critical
+              - Important
+              - Medium
+              - Low
+  ######### MaintenanceWindow ########
+  MaintenanceWindow:
+    Type: AWS::SSM::MaintenanceWindow
+    Properties:
+      Name: Security_Patches_Updates
+      Description: "A Maintenance window for applying patches"
+      AllowUnassociatedTargets: true
+      Schedule: cron(0/3 * * * ? *)
+      Duration: 1
+      Cutoff: 0
+  MaintenanceWindowTargets:
+    Type: AWS::SSM::MaintenanceWindowTarget
+    Properties:
+      Name: Patching_Targets
+      Description: Targets for security patches
+      WindowId: !Ref MaintenanceWindow
+      ResourceType: INSTANCE
+      Targets: 
+        - Key: tag:Patch Group
+          Values:
+            - AMZ-Linux
+    DependsOn: MaintenanceWindow
+  MaintenanceWindowTask:
+    Type: AWS::SSM::MaintenanceWindowTask
+    Properties:
+      Name: Patching_Task
+      Description: Installs security patches
+      MaxErrors: 0
+      ServiceRoleArn: !GetAtt MaintenanceWindowRole.Arn
+      Priority: 1
+      MaxConcurrency: 20
+      Targets: 
+        - Key: WindowTargetIds 
+          Values:
+            - !Ref MaintenanceWindowTargets
+      TaskArn: AWS-RunPatchBaseline
+      TaskInvocationParameters:
+        MaintenanceWindowRunCommandParameters:
+          Parameters:
+            {
+              "Operation": [
+                "Install"
+              ]
+            }
+          OutputS3BucketName: String
+          OutputS3KeyPrefix: String
+      WindowId: !Ref MaintenanceWindow
+      TaskType: RUN_COMMAND
+    DependsOn: MaintenanceWindow
+Outputs:
+  SSMPatchBaseline:
+    Value: !Ref PatchBaseline
