@@ -2,6 +2,8 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: "Cloudformation stack to create an ECS Cluster"
 
 Parameters:
+  ALBSecurityGroup:
+    Type: String
   ALBDNS:
     Type: String
     Description: Application Load Balancer DNS
@@ -49,8 +51,9 @@ Parameters:
     Description: VPC-ID of your existing Virtual Private Cloud (VPC).
   ECSAMI:
     Description: AMI ID
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /aws/service/ecs/optimized-ami/amazon-linux/recommended/image_id
+    Type: String
+    Default: ami-0bb61fa8e4ad59270
+    # Default: /aws/service/ecs/optimized-ami/amazon-linux/recommended/image_id
   Environment:
     Type: String
     Description: "Environment platform, this parameter will be used to name the resources ."
@@ -114,12 +117,7 @@ Resources:
                     "logs:CreateLogStream",
                     "logs:CreateLogGroup",
                     "logs:DescribeLogStreams",
-                    "logs:PutLogEvents",
-                    "ecr:BatchCheckLayerAvailability",
-                    "ecr:BatchGetImage",
-                    "ecr:GetDownloadUrlForLayer",
-                    "ecr:GetAuthorizationToken",
-                    "cloudformation:*"
+                    "logs:PutLogEvents"
                   ],
                   "Resource": "*"
               }]
@@ -130,19 +128,23 @@ Resources:
     Properties:
       GroupDescription: Allow tcp to client host
       VpcId: !Ref VpcId
-      SecurityGroupIngress:
-      - IpProtocol: tcp
-        FromPort: 0
-        ToPort: 65535
-        CidrIp: 0.0.0.0/0
       SecurityGroupEgress:
       - CidrIp: 0.0.0.0/0
         IpProtocol: '-1'
       Tags:
         - Key: Name
-          Value: !Sub ${ClusterName}-${AWS::Region}
+          Value: !Sub ${StackName}-${ClusterName}-sg
         - Key: StackName
           Value: !Sub ${StackName}-${Environment}
+
+  SGBaseIngress:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: 0
+      ToPort: 65535
+      SourceSecurityGroupId: !Ref ALBSecurityGroup
 
   EcsAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
@@ -190,6 +192,7 @@ Resources:
           Ebs:
             VolumeSize: 30
             VolumeType: "gp2"
+            Encrypted: true
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
@@ -343,3 +346,6 @@ Resources:
 Outputs:
   EcsCluster:
     Value: !Ref EcsCluster
+  
+  SecurityGroup:
+    Value: !Ref SecurityGroup

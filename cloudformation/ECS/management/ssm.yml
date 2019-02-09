@@ -71,7 +71,7 @@ Resources:
       Name: Security_Patches_Updates
       Description: "A Maintenance window for applying patches"
       AllowUnassociatedTargets: true
-      Schedule: cron(0/3 * * * ? *)
+      Schedule: cron(0 * ? * SUN *)
       Duration: 1
       Cutoff: 0
   MaintenanceWindowTargets:
