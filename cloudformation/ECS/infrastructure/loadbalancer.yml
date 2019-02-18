@@ -73,6 +73,9 @@ Resources:
           Value: !Ref S3BucketLogs
       SecurityGroups:
         - !Ref SecurityGroup
+      Tags:
+        - Key: StackName
+          Value: !Sub ${StackName}-${Environment}
 
   SecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -81,7 +84,18 @@ Resources:
       VpcId: !Ref VpcId
       SecurityGroupIngress:
         - CidrIp: 0.0.0.0/0
-          IpProtocol: '-1'
+          FromPort: 443
+          ToPort: 443
+          IpProtocol: tcp
+        - CidrIp: 0.0.0.0/0
+          FromPort: 80
+          ToPort: 80
+          IpProtocol: tcp
+      Tags:
+        - Key: Name
+          Value: !Sub ${StackName}-${LoadBalancerName}-sg
+        - Key: StackName
+          Value: !Sub ${StackName}-${Environment}
 
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup

@@ -23,6 +23,10 @@ Parameters:
   DBAllocatedStorage:
     Description: The amount of storage (in GB) to allocate to the DB Instance.
     Type: Number
+  Certificate:
+    Type: String
+    Description: "SSL Certificate ARN"
+    Default: ""
   ContainerPort:
     Type: Number
     Description: Container port of application
@@ -133,13 +137,14 @@ Resources:
     Properties:
       TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/infrastructure/loadbalancer.yml"
       Parameters:
-        LoadBalancerName: !Sub loadbalancer-${StackName}-${Environment}
+        LoadBalancerName: !Sub ${StackName}-loadbalancer-${Environment}
         SubnetIds: !Join [ ",", [!GetAtt [VPCStack, Outputs.PublicSubnet1ID], !GetAtt [VPCStack, Outputs.PublicSubnet2ID]]]
         VpcId: !GetAtt VPCStack.Outputs.VPCID
         ContainerPort: !Ref ContainerPort
         S3BucketLogs: !GetAtt S3Bucket.Outputs.BucketName
         Environment: !Ref Environment
         StackName: !Ref StackName
+        Certificate: !Ref Certificate
       Tags:
         - Key: StackName
           Value: !Sub ${StackName}-${Environment}
@@ -152,6 +157,7 @@ Resources:
     Properties:
       TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/infrastructure/ecs-cluster.yml"
       Parameters:
+        ALBSecurityGroup: !GetAtt ALBStack.Outputs.SecurityGroupId
         ALBDNS: !GetAtt ALBStack.Outputs.LoadBalancerDomain
         ClusterName: !Sub ${StackName}-${Environment}
         # DataDogAPIKey: !Ref DataDogAPIKey
@@ -168,19 +174,6 @@ Resources:
         - Key: StackName
           Value: !Sub ${StackName}-${Environment}
   
-  RedisStack:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/datastore/elasticache.yml"
-      Parameters:
-        VPCSubnets: !Join [ ",", [!GetAtt [VPCStack, Outputs.PrivateSubnet1AID], !GetAtt [VPCStack, Outputs.PrivateSubnet2AID]]]
-        VpcId: !GetAtt VPCStack.Outputs.VPCID
-        StackName: !Ref StackName
-        Environment: !Ref Environment
-      Tags:
-        - Key: StackName
-          Value: !Sub ${StackName}-${Environment}
-
   MyApp:
     DependsOn:
       - RedisStack
@@ -199,6 +192,7 @@ Resources:
         MinimumHealthyPercent: 0
         TargetGroupArn: !GetAtt ALBStack.Outputs.TargetGroupArn
         RedisHost: !GetAtt RedisStack.Outputs.ElastiCacheCluster
+        # RedisHost: asdf
         # DataDogAPIKey: !Ref DataDogAPIKey
       Tags:
         - Key: StackName
@@ -220,6 +214,21 @@ Resources:
         SubnetIds: !Join [ ",", [!GetAtt [VPCStack, Outputs.PrivateSubnet1AID], !GetAtt [VPCStack, Outputs.PrivateSubnet2AID]]]
         Environment: !Ref Environment
         StackName: !Ref StackName
+        EC2SecurityGroup: !GetAtt EcsStack.Outputs.SecurityGroup
+      Tags:
+        - Key: StackName
+          Value: !Sub ${StackName}-${Environment}
+  
+  RedisStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/datastore/elasticache.yml"
+      Parameters:
+        VPCSubnets: !Join [ ",", [!GetAtt [VPCStack, Outputs.PrivateSubnet1AID], !GetAtt [VPCStack, Outputs.PrivateSubnet2AID]]]
+        VpcId: !GetAtt VPCStack.Outputs.VPCID
+        StackName: !Ref StackName
+        Environment: !Ref Environment
+        EC2SecurityGroup: !GetAtt EcsStack.Outputs.SecurityGroup
       Tags:
         - Key: StackName
           Value: !Sub ${StackName}-${Environment}

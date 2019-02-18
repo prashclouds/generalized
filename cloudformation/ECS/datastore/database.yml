@@ -39,6 +39,8 @@ Parameters:
   StackName:
     Type: String
     Description: "This name will be used to named the resources"
+  EC2SecurityGroup:
+    Type: String
 
 Resources:
   DBKey:
@@ -69,23 +71,29 @@ Resources:
           Value: !Sub ${StackName}-${Environment}
         - Key: Environment
           Value: !Ref Environment
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 5432
-          ToPort: 5432
-          CidrIp: !Ref VpcCidr
+        - Key: Name
+          Value: !Sub ${StackName}-RDS-sg
       SecurityGroupEgress:
         - CidrIp: 0.0.0.0/0
           FromPort: -1
           IpProtocol: '-1'
           ToPort: -1
 
+  SGBaseIngress:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref DBEC2SecurityGroup
+      IpProtocol: tcp
+      FromPort: 5432
+      ToPort: 5432
+      SourceSecurityGroupId: !Ref EC2SecurityGroup
+
   DBInstance:
     Type: AWS::RDS::DBInstance
     Properties:
       DBName: !Ref DBName
       Engine: postgres
-      MultiAZ: false
+      MultiAZ: true
       MasterUsername: '{{resolve:ssm:/ECS/db/MasterUsername:1}}'
       DBInstanceClass: !Ref DBClass
       DBSubnetGroupName: !Ref SubnetGroup
@@ -97,8 +105,9 @@ Resources:
       VPCSecurityGroups:
         - !Ref DBEC2SecurityGroup
       StorageType: 'gp2'
-      BackupRetentionPeriod: '7'
+      BackupRetentionPeriod: '30'
       PreferredBackupWindow: '21:30-22:00'
+      PreferredMaintenanceWindow: 'sun:00:00-sun:00:30'
       StorageEncrypted: true
       CopyTagsToSnapshot: true
       StorageEncrypted: true

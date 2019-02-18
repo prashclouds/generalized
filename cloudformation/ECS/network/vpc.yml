@@ -112,6 +112,8 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${StackName}-${Environment}
+        - Key: StackName
+          Value: !Sub ${StackName}-${Environment}
 
   VPCDHCPOptionsAssociation:
     Type: AWS::EC2::VPCDHCPOptionsAssociation
@@ -124,6 +126,8 @@ Resources:
     Properties:
       Tags:
         - Key: Name
+          Value: !Sub ${StackName}-${Environment}
+        - Key: StackName
           Value: !Sub ${StackName}-${Environment}
 
   VPCGatewayAttachment:
@@ -141,7 +145,9 @@ Resources:
       AvailabilityZone: !Select [0, !Ref AvailabilityZones]
       Tags:
         - Key: Name
-          Value: "Private subnet 1A"
+          Value: !Sub ${StackName}-Private subnet 1A
+        - Key: StackName
+          Value: !Sub ${StackName}-${Environment}
         - !If
           - PrivateSubnetATag1Condition
           - Key: !Select [0, !Split ["=", !Ref PrivateSubnetATag1]]
@@ -162,7 +168,9 @@ Resources:
       AvailabilityZone: !Select [1, !Ref AvailabilityZones]
       Tags:
         - Key: Name
-          Value: "Private subnet 2A"
+          Value: !Sub ${StackName}-Private subnet 2A
+        - Key: StackName
+          Value: !Sub ${StackName}-${Environment}
         - !If
           - PrivateSubnetATag1Condition
           - Key: !Select [0, !Split ["=", !Ref PrivateSubnetATag1]]
@@ -182,7 +190,9 @@ Resources:
       AvailabilityZone: !Select [0, !Ref AvailabilityZones]
       Tags:
         - Key: Name
-          Value: "Public subnet 1"
+          Value: !Sub ${StackName}-Public subnet 1
+        - Key: StackName
+          Value: !Sub ${StackName}-${Environment}
         - !If
           - PublicSubnetTag1Condition
           - Key: !Select [0, !Split ["=", !Ref PublicSubnetTag1]]
@@ -203,7 +213,9 @@ Resources:
       AvailabilityZone: !Select [1, !Ref AvailabilityZones]
       Tags:
         - Key: Name
-          Value: "Public subnet 2"
+          Value: !Sub ${StackName}-Public subnet 2
+        - Key: StackName
+          Value: !Sub ${StackName}-${Environment}
         - !If
           - PublicSubnetTag1Condition
           - Key: !Select [0, !Split ["=", !Ref PublicSubnetTag1]]
@@ -223,9 +235,11 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: "Private subnet 1A"
+          Value: !Sub ${StackName}-Private route 1A
         - Key: Network
           Value: Private
+        - Key: StackName
+          Value: !Sub ${StackName}-${Environment}
 
   PrivateSubnet1ARoute:
     Condition: PrivateSubnetsCondition
@@ -249,9 +263,11 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: "Private subnet 2A"
+          Value: !Sub ${StackName}-Private route 2A
         - Key: Network
           Value: Private
+        - Key: StackName
+          Value: !Sub ${StackName}-${Environment}
 
   PrivateSubnet2ARoute:
     Condition: PrivateSubnetsCondition
@@ -274,9 +290,11 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: "Public Subnets"
+          Value: !Sub ${StackName}-Public Route Table
         - Key: Network
           Value: Public
+        - Key: StackName
+          Value: !Sub ${StackName}-${Environment}
 
   PublicSubnetRoute:
     DependsOn: VPCGatewayAttachment
@@ -319,6 +337,11 @@ Resources:
     Properties:
       AllocationId: !GetAtt [NAT1EIP, AllocationId]
       SubnetId: !Ref PublicSubnet1
+      Tags:
+        - Key: Name
+          Value: !Sub ${StackName}-NATGateway 1
+        - Key: StackName
+          Value: !Sub ${StackName}-${Environment}
 
   NATGateway2:
     Condition: NATGatewayCondition
@@ -327,6 +350,11 @@ Resources:
     Properties:
       AllocationId: !GetAtt [NAT2EIP, AllocationId]
       SubnetId: !Ref PublicSubnet2
+      Tags:
+        - Key: Name
+          Value: !Sub ${StackName}-NATGateway 2
+        - Key: StackName
+          Value: !Sub ${StackName}-${Environment}
 
 Outputs:
   PrivateSubnet1AID:
