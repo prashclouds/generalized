@@ -1,7 +1,8 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >
-  Resources to manage patches in a manteinance window with
-  System Manager
+  System Manager Resources to do
+  Patching to Operating Systems
+  Patching custom AMIs
 Parameters:
   Environment:
     Type: String
@@ -15,24 +16,128 @@ Parameters:
     Type: String
     Default: demo
     Description: This name will be used to named the resources
+  AMI:
+    Type: AWS::EC2::Image::Id
+    Default: ami-015cd62e9cc8c5000
+    Description: The AMI source Id to apply patching
 Resources:
   ############### Roles ##############
-  MaintenanceWindowRole:
+  SSMServiceRole:
     Type: AWS::IAM::Role
     Properties:
-      Path: "/"
-      ManagedPolicyArns:
-      - arn:aws:iam::aws:policy/service-role/AmazonSSMMaintenanceWindowRole
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
         - Effect: Allow
           Principal:
             Service:
-            - ec2.amazonaws.com
             - ssm.amazonaws.com
-          Action:
-          - sts:AssumeRole
+            - ec2.amazonaws.com
+          Action: sts:AssumeRole
+      Policies:
+      - PolicyName: passrole
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - ssm:CancelCommand
+                - ssm:GetCommandInvocation
+                - ssm:ListCommandInvocations
+                - ssm:ListCommands
+                - ssm:SendCommand
+                - ssm:GetAutomationExecution
+                - ssm:GetParameters
+                - ssm:StartAutomationExecution
+              Resource:
+                - "*"
+            - Effect: Allow
+              Action:
+                - ec2:DescribeInstanceAttribute
+                - ec2:DescribeInstanceStatus
+                - ec2:DescribeInstances
+              Resource:
+                - "*"
+            - Effect: Allow
+              Action:
+                - lambda:InvokeFunction
+              Resource:
+                - arn:aws:lambda:*:*:function:SSM*
+                - arn:aws:lambda:*:*:function:*:SSM*
+            - Effect: Allow
+              Action:
+                - states:DescribeExecution
+                - states:StartExecution
+              Resource:
+                - arn:aws:states:*:*:stateMachine:SSM*
+                - arn:aws:states:*:*:execution:SSM*
+            - Effect: Allow
+              Action:
+                - resource-groups:ListGroups
+                - resource-groups:ListGroupResources
+              Resource:
+                - "*"
+            - Effect: Allow
+              Action:
+                - tag:GetResources
+              Resource:
+                - "*"
+            - Effect: Allow
+              Action: iam:PassRole
+              Resource: "*"
+              Condition:
+                StringEquals:
+                  iam:PassedToService:
+                  - ssm.amazonaws.com
+
+  # Role for Instance used to create AMI
+  ManagedInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - ssm.amazonaws.com
+            - ec2.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+      Path: "/"
+  ManagedInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+      - !Ref ManagedInstanceRole
+      InstanceProfileName: ManagedInstanceProfile 
+  AutomationServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - ssm.amazonaws.com
+            - ec2.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonSSMAutomationRole
+      Path: "/"
+      Policies:
+      - PolicyName: passrole
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - iam:PassRole
+            Resource:
+            - !GetAtt ManagedInstanceRole.Arn
   ########## Patch Baseline ##########
   PatchBaseline:
     Type: AWS::SSM::PatchBaseline
@@ -86,13 +191,13 @@ Resources:
           Values:
             - AMZ-Linux
     DependsOn: MaintenanceWindow
-  MaintenanceWindowTask:
+  PatchMaintenanceWindowTask:
     Type: AWS::SSM::MaintenanceWindowTask
     Properties:
       Name: Patching_Task
       Description: Installs security patches
       MaxErrors: 0
-      ServiceRoleArn: !GetAtt MaintenanceWindowRole.Arn
+      ServiceRoleArn: !GetAtt SSMServiceRole.Arn
       Priority: 1
       MaxConcurrency: 20
       Targets: 
@@ -112,6 +217,37 @@ Resources:
           # OutputS3KeyPrefix: String
       WindowId: !Ref MaintenanceWindow
       TaskType: RUN_COMMAND
+    DependsOn: MaintenanceWindow
+  UpdateAmiMaintenanceWindowTask:
+    Type: AWS::SSM::MaintenanceWindowTask
+    Properties:
+      Name: UpdateAmi_Task
+      Description: Updates custom AMIs
+      MaxErrors: 0
+      ServiceRoleArn: !GetAtt SSMServiceRole.Arn
+      Priority: 1
+      MaxConcurrency: 20
+      Targets: 
+        - Key: InstanceIds 
+          Values:
+            - i-00000000000000000
+      TaskArn: AWS-UpdateLinuxAmi
+      TaskInvocationParameters:
+        MaintenanceWindowAutomationParameters:
+          Parameters:
+            {
+              "AutomationAssumeRole": [{"Fn::GetAtt": ["AutomationServiceRole", "Arn"]}],
+              "ExcludePackages": ["none"],
+              "IamInstanceProfileName": [{"Ref": "ManagedInstanceProfile"}],
+              "IncludePackages": ["all"],
+              "InstanceType": ["t2.micro"],
+              "PostUpdateScript": ["none"],
+              "PreUpdateScript": ["none"],
+              "SourceAmiId": [{"Ref": "AMI"}],
+              "TargetAmiName": ["UpdateLinuxAmi_from_{{SourceAmiId}}_on_{{global:DATE_TIME}}"]
+            }
+      WindowId: !Ref MaintenanceWindow
+      TaskType: AUTOMATION
     DependsOn: MaintenanceWindow
 Outputs:
   SSMPatchBaseline:
