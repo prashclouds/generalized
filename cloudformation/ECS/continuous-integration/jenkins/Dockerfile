@@ -3,13 +3,13 @@ FROM jenkins/jenkins:2.165
 USER root
 RUN curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-18.06.3-ce.tgz && tar --strip-components=1 -xvzf docker-18.06.3-ce.tgz -C /usr/local/bin
 
-# hadolint ignore=DL3009
+
 RUN apt-get update -q
 
 RUN echo 2.0 > /usr/share/jenkins/ref/jenkins.install.UpgradeWizard.state
 RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 RUN python get-pip.py
-# hadolint ignore=DL3013
+
 RUN pip install ecs-deploy awscli
 
 COPY ./plugins.txt /usr/share/jenkins/ref/plugins.txt
@@ -26,9 +26,3 @@ USER jenkins
 ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["sh","-c", "/usr/local/bin/jenkins.sh"]
 
-
-
-
-
-
-# CMD ["sh","-c","rm -r $JENKINS_HOME/jobs/seed-job/workspace/jobs; service postfix start; /usr/local/bin/jenkins.sh"]
