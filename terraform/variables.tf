@@ -31,26 +31,15 @@ variable "rds_subnets" {
 }
 
 ### EKS MODULE
-variable "roleARN" {}
 variable "worker" {
   type = "map"
 }
-locals{
- vpc_to_connect ={
-    vpc_id                = "${data.terraform_remote_state.utility.vpc_id}"
-    vpc_cidr              = "${data.terraform_remote_state.utility.vpc_cidr}"
-    vpn_sg                = "${data.terraform_remote_state.utility.vpn_sg}"
-    public_route_table    = "${data.terraform_remote_state.utility.public_route_table}"
-    private_route_table   = "${data.terraform_remote_state.utility.private_route_table}"
-  }
-}
-
-
-### IAM Module
-variable "searchservice_managed_policies" {type="list"}
-
-variable "mlservice_managed_policies" {type="list"}
-
-variable "wsbackend_managed_policies" {type="list"}
-
-variable "reviewservice_managed_policies" {type="list"}
+# locals{
+#  vpc_to_connect ={
+#     vpc_id                = "${data.terraform_remote_state.utility.vpc_id}"
+#     vpc_cidr              = "${data.terraform_remote_state.utility.vpc_cidr}"
+#     vpn_sg                = "${data.terraform_remote_state.utility.vpn_sg}"
+#     public_route_table    = "${data.terraform_remote_state.utility.public_route_table}"
+#     private_route_table   = "${data.terraform_remote_state.utility.private_route_table}"
+#   }
+# }

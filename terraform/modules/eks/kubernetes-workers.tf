@@ -21,27 +21,14 @@ POLICY
 }
 
 # lets start assigning worker node policies to the role
-resource "aws_iam_role_policy_attachment" "eks-AmazonEKSWorkerNodePolicy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+resource "aws_iam_role_policy_attachment" "eks-WorkerPolicies" {
+  count      = "${length(var.worker_node_policies)}"
+  policy_arn = "arn:aws:iam::aws:policy/${var.worker_node_policies[count.index]}"
   role       = "${aws_iam_role.eks_worker_role.name}"
 }
 
-resource "aws_iam_role_policy_attachment" "eks-AmazonEKS_CNI_Policy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-  role       = "${aws_iam_role.eks_worker_role.name}"
-}
-
-resource "aws_iam_role_policy_attachment" "eks-AmazonEC2ContainerRegistryReadOnly" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-  role       = "${aws_iam_role.eks_worker_role.name}"
-}
-
-resource "aws_iam_role_policy_attachment" "eks-CloudWatchFullAccess" {
-  policy_arn = "arn:aws:iam::aws:policy/CloudWatchFullAccess"
-  role       = "${aws_iam_role.eks_worker_role.name}"
-}
-# adding the necessary policies for route53 kubernetes
-# @see https://github.com/wearemolecule/route53-kubernetes
+# adding the necessary policies for external-dns
+# @see https://github.com/kubernetes-incubator/external-dns/blob/master/docs/tutorials/aws.md
 resource "aws_iam_role_policy" "worker-route53-role-policy" {
   name = "${aws_eks_cluster.k8s.name}-worker-route53-k8s-policy"
   role = "${aws_iam_role.eks_worker_role.id}"
@@ -51,22 +38,13 @@ resource "aws_iam_role_policy" "worker-route53-role-policy" {
     "Statement": [
         {
             "Effect": "Allow",
-            "Action": "route53:ListHostedZonesByName",
-            "Resource": "*"
-        },
-        {
-            "Effect": "Allow",
-            "Action": "elasticloadbalancing:DescribeLoadBalancers",
-            "Resource": "*"
-        },
-        {
-            "Effect": "Allow",
-            "Action": "route53:ChangeResourceRecordSets",
-            "Resource": "*"
-        },
-        {
-            "Effect": "Allow",
-            "Action":"sts:AssumeRole",
+            "Action": [
+            "route53:ListHostedZonesByName",
+            "route53:ListResourceRecordSets",
+            "elasticloadbalancing:DescribeLoadBalancers",
+            "route53:ChangeResourceRecordSets",
+            "sts:AssumeRole"
+            ],
             "Resource": "*"
         }
     ]
@@ -90,7 +68,6 @@ resource "aws_security_group" "k8s_worker_security_group" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
   tags = "${
     map(
     "kubernetes.io/cluster/${aws_eks_cluster.k8s.name}" ,"owned"
@@ -108,7 +85,7 @@ resource "aws_security_group_rule" "k8s-worker-ingress-self" {
   type                     = "ingress"
 }
 resource "aws_security_group_rule" "k8s-worker-ingress-ssh" {
-  count                    = "${var.vpn_sg != ""? 1 : 0}"
+  count                    = "${var.vpn_sg != "" ? 1 : 0}"
   description              = "Allow vpn to connect over ssh "
   from_port                = 22
   protocol                 = "tcp"
@@ -171,6 +148,19 @@ resource "aws_autoscaling_group" "k8s-worker-auto-scale" {
   name                 = "${aws_eks_cluster.k8s.name}_eks_auto_scaling_group"
   vpc_zone_identifier  = ["${var.private_subnets}"]
   depends_on           = ["aws_launch_configuration.worker_node","aws_security_group.k8s_worker_security_group"]
+  lifecycle {
+        ignore_changes = ["desired_capacity"]
+  }
+   tag {
+    key                 = "kubernetes.io/cluster-autoscaler/${aws_eks_cluster.k8s.name}"
+    value               = "true"
+    propagate_at_launch = true
+  }
+  tag {
+    key                 = "kubernetes.io/cluster-autoscaler/enabled"
+    value               = "true"
+    propagate_at_launch = true
+  } 
   tag {
     key                 = "Name"
     value               = "${aws_eks_cluster.k8s.name}_worker"
@@ -181,26 +171,4 @@ resource "aws_autoscaling_group" "k8s-worker-auto-scale" {
     value               = "owned"
     propagate_at_launch = true
   }
-}
-
-locals {
-  config_map_aws_auth = <<CONFIGMAPAWSAUTH
-
-
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: aws-auth
-  namespace: kube-system
-data:
-  mapRoles: |
-    - rolearn: ${aws_iam_role.eks_worker_role.arn}
-      username: system:node:{{EC2PrivateDNSName}}
-      groups:
-        - system:bootstrappers
-        - system:nodes
-    - rolearn: ${var.roleARN}
-      groups:
-        - system:masters
-CONFIGMAPAWSAUTH
 }

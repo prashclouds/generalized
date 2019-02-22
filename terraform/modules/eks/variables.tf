@@ -14,6 +14,10 @@ variable "k8s_version" {
   description = "k8s version"
   default = "1.11"
 }
+variable "autoscaler_version" {
+  type = "string"
+  default= "1.3.7"
+}
 variable "worker" {
   type    = "map"
   description = "Map of EKS workers settings"
@@ -25,7 +29,21 @@ variable "worker" {
     key_name      = "test"
   }
 }
-
+variable "worker_node_policies" {
+  type = "list"
+  default = [
+    "AmazonEKSWorkerNodePolicy",
+    "AmazonEKS_CNI_Policy",
+    "AmazonEC2ContainerRegistryReadOnly",
+    "CloudWatchFullAccess"]
+}
+variable "cluster_policies" {
+  type = "list"
+  default = [
+    "AmazonEKSClusterPolicy",
+    "AmazonEKSServicePolicy"
+  ]
+}
 variable "datadog_key" {
   type = "string"
   description = "API Key of the datadog agent"
@@ -49,10 +67,4 @@ variable "private_subnets" {
 variable "public_subnets" {
   type = "list"
   description = "list of private subnets where the cluster will be deploy"
-}
-
-variable "roleARN" {
-  type = "string"
-  description = "Role ARN to authenticate to the cluster"
-  default = ""
 }

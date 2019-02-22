@@ -21,19 +21,11 @@ POLICY
 }
 
 # lets attach all the policies that K8s master nodes needs to manage all aws resources
-resource "aws_iam_role_policy_attachment" "eks-AmazonEKSClusterPolicy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+resource "aws_iam_role_policy_attachment" "eks-ClusterPolicies" {
+  count      = "${length(var.cluster_policies)}"
+  policy_arn = "arn:aws:iam::aws:policy/${var.cluster_policies[count.index]}"
   role       = "${aws_iam_role.eks_master_role.name}"
-  depends_on = ["aws_iam_role.eks_master_role"]
 }
-
-resource "aws_iam_role_policy_attachment" "eks-AmazonEKSServicePolicy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
-  role       = "${aws_iam_role.eks_master_role.name}"
-  depends_on = ["aws_iam_role.eks_master_role"]
-}
-
-
 # security group for the master nodes
 resource "aws_security_group" "k8s_master_security_group" {
   name        = "k8s_master_sg_${var.environment}_${var.cluster_name}"
@@ -95,71 +87,8 @@ resource "aws_eks_cluster" "k8s" {
   depends_on = [
     "aws_iam_role.eks_master_role",
     "aws_security_group.k8s_master_security_group",
-    "aws_iam_role_policy_attachment.eks-AmazonEKSClusterPolicy",
-    "aws_iam_role_policy_attachment.eks-AmazonEKSServicePolicy",
+    "aws_iam_role_policy_attachment.eks-ClusterPolicies",
   ]
 }
 
-locals {
-  kubeconfig = <<KUBECONFIG
-
-
-apiVersion: v1
-clusters:
-- cluster:
-    server: ${aws_eks_cluster.k8s.endpoint}
-    certificate-authority-data: ${aws_eks_cluster.k8s.certificate_authority.0.data}
-  name: kubernetes
-contexts:
-- context:
-    cluster: kubernetes
-    user: aws
-  name: aws
-current-context: aws
-kind: Config
-preferences: {}
-users:
-- name: aws
-  user:
-    exec:
-      apiVersion: client.authentication.k8s.io/v1alpha1
-      command: heptio-authenticator-aws
-      args:
-        - "token"
-        - "-i"
-        - "${aws_eks_cluster.k8s.name}"
-        - "-r"
-        - "${var.roleARN}"
-KUBECONFIG
-}
-
-locals {
-  kubeconfig_admin = <<KUBECONFIG
-
-
-apiVersion: v1
-clusters:
-- cluster:
-    server: ${aws_eks_cluster.k8s.endpoint}
-    certificate-authority-data: ${aws_eks_cluster.k8s.certificate_authority.0.data}
-  name: kubernetes
-contexts:
-- context:
-    cluster: kubernetes
-    user: aws
-  name: aws
-current-context: aws
-kind: Config
-preferences: {}
-users:
-- name: aws
-  user:
-    exec:
-      apiVersion: client.authentication.k8s.io/v1alpha1
-      command: aws-iam-authenticator
-      args:
-        - "token"
-        - "-i"
-        - "${aws_eks_cluster.k8s.name}"
-KUBECONFIG
-}
+data "aws_region" "current" {}

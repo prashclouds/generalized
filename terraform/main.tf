@@ -6,49 +6,30 @@ module "vpc" {
   public_subnets  = "${var.public_subnets}"
   private_subnets = "${var.private_subnets}"
   rds_subnets     = "${var.rds_subnets}"
-  vpc_to_connect = "${local.vpc_to_connect}"
+ // vpc_to_connect = "${local.vpc_to_connect}"
 }
 
 module "eks" {
   source          = "modules/eks"
   environment     = "${var.environment}"
   cluster_name    = "${var.cluster_name}"
-  roleARN         = "${var.roleARN}"
   worker          = "${var.worker}"
   vpc_id          = "${module.vpc.vpc_id}"
-  vpn_sg          = "${local.vpc_to_connect["vpn_sg"]}"
+  //vpn_sg          = "${local.vpc_to_connect["vpn_sg"]}"
   private_subnets = "${module.vpc.private_subnets_ids}"
   public_subnets  = "${module.vpc.public_subnets_ids}"
- // datadog_key     = "${data.aws_ssm_parameter.datadog_key.value}"
 }
 
-module "rds" {
-  source              = "modules/rds"
-  environment         = "${var.environment}"
-  cluster_name        = "${var.cluster_name}"
-  vpc_id              = "${module.vpc.vpc_id}"
-  rds_subnet_group    = "${module.vpc.rds_subnet_group[0]}"
-  param_prefix        = "${var.param_prefix}"
-}
+# module "rds" {
+#   source              = "modules/rds"
+#   environment         = "${var.environment}"
+#   cluster_name        = "${var.cluster_name}"
+#   vpc_id              = "${module.vpc.vpc_id}"
+#   rds_subnet_group    = "${module.vpc.rds_subnet_group[0]}"
+#   param_prefix        = "${var.param_prefix}"
+# }
 
-module "elasticsearch" {
-  source              = "modules/elasticsearch"
-  environment         = "${var.environment}"
-  vpc_id              = "${module.vpc.vpc_id}"
-  private_subnets     = ["${module.vpc.private_subnets_ids}"]
-}
-
-module "kinesis" {
-  source              = "modules/kinesis"
-  environment         = "${var.environment}"
-}
-
-module "iam" {
-  source                         = "modules/iam"
-  environment                    = "${var.environment}"
-  kubernetes_worker_arn          = "${module.eks.kubernetes_worker_arn}"
-  searchservice_managed_policies = "${var.searchservice_managed_policies}"
-  mlservice_managed_policies     = "${var.mlservice_managed_policies}"
-  wsbackend_managed_policies     = "${var.wsbackend_managed_policies}"
-  reviewservice_managed_policies = "${var.reviewservice_managed_policies}"
-}
+# module "kinesis" {
+#   source              = "modules/kinesis"
+#   environment         = "${var.environment}"
+# }

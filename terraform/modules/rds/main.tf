@@ -1,16 +1,25 @@
-module "databases" {
-  source                = "environment"
-  db_subnet_group       = "${var.rds_subnet_group}"
-  db_security_groups_id = "${aws_security_group.rds.id}"
-  environment           = "${var.environment}"
-  cluster_name          = "${var.cluster_name}"
-  param_prefix          = "${var.param_prefix}"
-  passwords             = "${local.passwords}"
+resource "aws_db_instance" "db" {
+  identifier                = "${var.environment}-test",
+  allocated_storage         = 10,
+  storage_type              = "gp2",
+  engine                    = "mysql",
+  engine_version            = "8.0.11",
+  instance_class            = "db.t2.micro",
+  multi_az                  = false,
+  storage_encrypted         = false,
+  backup_retention_period   = 1,
+  password                  = "${data.aws_ssm_parameter.db_password.value}",
+  username                  = "user",
+  vpc_security_group_ids    = ["${var.db_security_groups_id}"]
+  db_subnet_group_name      = "${var.db_subnet_group}"
+  final_snapshot_identifier = "${var.environment}-${var.cluster_name}-latest"
+//  parameter_group_name      = "utf-8-encoding"
 }
+
 #
 # RDS passwords
 #
-data "aws_ssm_parameter" "db1_password" {
+data "aws_ssm_parameter" "db_password" {
   name = "${var.param_prefix}/${var.environment}/test-password"
 }
 locals{

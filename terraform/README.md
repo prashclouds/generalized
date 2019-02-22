@@ -47,3 +47,50 @@ terraform plan -var-file=config/${env}.tfvars
 terraform apply -var-file=config/${env}.tfvars
 terraform destroy -var-file=config/${env}.tfvars
 ```
+
+
+## Allow Worker nodes and Users to connect your cluster
+
+After applying the terraform you must copy the output [EKS_WORKER_ROLE]
+and replace the values on the file below and create it.
+
+Also make sure to replace <USER ROLE ARN> with the role you want to assign for the users that will have access to the EKS cluster through kubectl
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-auth
+  namespace: kube-system
+data:
+  mapRoles: |
+    - rolearn: <EKS_WORKER_ROLE>
+      username: system:node:{{EC2PrivateDNSName}}
+      groups:
+        - system:bootstrappers
+        - system:nodes
+    - rolearn: <USER ROLE ARN>
+      groups:
+        - system:masters
+```
+Then perform `kubectl apply -f <name_of_your_file.yml>`
+
+To update the kubeconfig you can execute the following command, this will update the kubeconfig and if your iam user has the role that will allow you access to the cluster you can start using kubectl
+
+```sh
+aws eks update-kubeconfig --name <cluster-name>
+```
+## Set up your OpenVPN
+
+- SSH into the OpenVPN instance using the [pem key](https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#KeyPairs:sort=keyName) provided in the cluster parameters, you can also look for what key is in use by checking the description details of the ec2 instance on the EC2 section of the AWS console
+- Once you have logged in into the machine you have to execute the following command
+```sh 
+sudo ovpn-init --ec2
+```
+- You will see a wizard asking for some questions like what port you should have your admin console, what interface should listen for connections and others, you can go with the default configuration, so hit enter and use default settings.
+- Change the password for the user openvpn from the unix system `sudo passwd openvpn`, this user will be required to have a password for the admin login
+- Login into the admin console by using the Public IP address like this https://publicIP/admin
+- Go to https://publicIP/admin/user_permissions to create and set passwords for users so they can login and download their client.opvn profile
+- You can download the client for openvpn from your server url once you are logged in.
+
+For further instructions or questions refer to the documentation:
+- https://openvpn.net/vpn-server-resources/amazon-web-services-ec2-tiered-appliance-quick-start-guide#running-the-openvpn-access-server-setup-wizard
