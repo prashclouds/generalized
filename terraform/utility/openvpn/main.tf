@@ -26,6 +26,9 @@ resource "aws_instance" "openvpn" {
 vpn_admin_user=${var.vpn_admin_user}
 vpn_admin_pw=${var.vpn_admin_password}
 USERDATA
+lifecycle {
+  prevent_destroy = true
+}
 }
 
 # Elastic Ip
