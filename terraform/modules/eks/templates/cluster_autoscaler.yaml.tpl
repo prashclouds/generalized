@@ -122,8 +122,6 @@ spec:
         app: cluster-autoscaler
     spec:
       serviceAccountName: cluster-autoscaler
-      nodeSelector:
-        kubelet.kubernetes.io/role: agent
       containers:
         - image: k8s.gcr.io/cluster-autoscaler:${autoscaler_version}
           name: cluster-autoscaler
