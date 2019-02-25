@@ -6,7 +6,7 @@ variable "region" {
 variable "param_prefix" {
   type = "string"
   description = "Prefix of parameter store where the secrets will be retrieved"
-  default = "/unitq"
+  default = "/nclouds"
 }
 variable "environment" {
   type = "string"
@@ -14,7 +14,7 @@ variable "environment" {
 }
 variable "cluster_name" {
   type = "string"
-  default = "unitq"
+  default = "nclouds"
 }
 variable "key_name" {
   type = "string"
