@@ -18,6 +18,11 @@ variable "autoscaler_version" {
   type = "string"
   default= "1.3.7"
 }
+variable "external_dns_version" {
+  type = "string"
+  description = "version of external dns pod"
+  default = "v0.5.11"
+}
 variable "worker" {
   type    = "map"
   description = "Map of EKS workers settings"
@@ -28,21 +33,6 @@ variable "worker" {
     max-size      = "4"
     key_name      = "test"
   }
-}
-variable "worker_node_policies" {
-  type = "list"
-  default = [
-    "AmazonEKSWorkerNodePolicy",
-    "AmazonEKS_CNI_Policy",
-    "AmazonEC2ContainerRegistryReadOnly",
-    "CloudWatchFullAccess"]
-}
-variable "cluster_policies" {
-  type = "list"
-  default = [
-    "AmazonEKSClusterPolicy",
-    "AmazonEKSServicePolicy"
-  ]
 }
 variable "datadog_key" {
   type = "string"
@@ -67,4 +57,20 @@ variable "private_subnets" {
 variable "public_subnets" {
   type = "list"
   description = "list of private subnets where the cluster will be deploy"
+}
+
+variable "worker_node_policies" {
+  type = "list"
+  default = [
+    "AmazonEKSWorkerNodePolicy",
+    "AmazonEKS_CNI_Policy",
+    "AmazonEC2ContainerRegistryReadOnly",
+    "CloudWatchFullAccess"]
+}
+variable "cluster_policies" {
+  type = "list"
+  default = [
+    "AmazonEKSClusterPolicy",
+    "AmazonEKSServicePolicy"
+  ]
 }

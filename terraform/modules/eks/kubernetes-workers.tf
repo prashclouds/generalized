@@ -27,30 +27,6 @@ resource "aws_iam_role_policy_attachment" "eks-WorkerPolicies" {
   role       = "${aws_iam_role.eks_worker_role.name}"
 }
 
-# adding the necessary policies for external-dns
-# @see https://github.com/kubernetes-incubator/external-dns/blob/master/docs/tutorials/aws.md
-resource "aws_iam_role_policy" "worker-route53-role-policy" {
-  name = "${aws_eks_cluster.k8s.name}-worker-route53-k8s-policy"
-  role = "${aws_iam_role.eks_worker_role.id}"
-  policy = <<EOF
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-            "route53:ListHostedZonesByName",
-            "route53:ListResourceRecordSets",
-            "elasticloadbalancing:DescribeLoadBalancers",
-            "route53:ChangeResourceRecordSets",
-            "sts:AssumeRole"
-            ],
-            "Resource": "*"
-        }
-    ]
-}
-EOF
-}
 
 resource "aws_iam_instance_profile" "eks-worker-instance-profile" {
   name = "eks_instance_profile_${aws_eks_cluster.k8s.name}"
