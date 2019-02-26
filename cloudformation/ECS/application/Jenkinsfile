@@ -1,0 +1,14 @@
+// node('jnlp-slave'){
+  // stage('Clone sources') {
+  //   git branch: 'Layer2', url: 'https://github.com/nclouds/generalized.git'
+  // }
+pipeline{
+  stage('test'){
+    sh 'ls'
+  }
+  // stage('Test') {
+  //   dir("cloudformation/ECS/continuous-integration/jenkins"){
+  //     sh 'docker run --rm -i hadolint/hadolint hadolint --trusted-registry nclouds.com - < Dockerfile'
+  //   }
+  // }
+}
