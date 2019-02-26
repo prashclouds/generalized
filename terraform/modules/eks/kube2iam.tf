@@ -8,5 +8,5 @@ data "template_file" "kube2iam" {
 }
 resource "local_file" "kube2iam" {
   content  = "${data.template_file.kube2iam.rendered}"
-  filename = "dist/kube2iam_${aws_eks_cluster.k8s.name}.yaml"
+  filename = "dist/1.kube2iam_${aws_eks_cluster.k8s.name}.yaml"
 }
