@@ -1,0 +1,8 @@
+node('jnlp-slave'){
+  stage('Test') {
+    sh 'ls'
+    dir("cloudformation/ECS/continuous-integration/jenkins"){
+      sh 'docker run --rm -i hadolint/hadolint hadolint --trusted-registry nclouds.com - < Dockerfile'
+    }
+  }
+}
