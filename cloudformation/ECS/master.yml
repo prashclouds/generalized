@@ -1,246 +1,189 @@
+AWSTemplateFormatVersion: "2010-09-09"
 Description: >
   ECS Cluster with monitoring tools, including DataDog, CloudWatch Logs and Systems Manager.
-
 Parameters:
-  AvailabilityZones:
-    Type: "List<AWS::EC2::AvailabilityZone::Name>"
-    Description: "List of Availability Zones to use for the subnets in the VPC. Note: The logical order is preserved. 1 or 3 AZs are used for this deployment."
-  DBName:
-    Description: DataBase Name
+  VPCCIDR:
     Type: String
-  # DBUser:
-  #   Description: DataBase User
-  #   Type: String
-  #   NoEcho: true
-  # DBPassword:
-  #   Description: DataBase Password
-  #   Type: String
-  #   NoEcho: true
-  DBClass:
-    Description: DataBase Class
-    Type: String
-    Default: db.t2.small
-  DBAllocatedStorage:
-    Description: The amount of storage (in GB) to allocate to the DB Instance.
-    Type: Number
+    Default: 10.0.0.0/16
+    AllowedPattern: "(\\d{1,3}\\.){3}\\d{1,3}/(\\d{1,2})"
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
+    Description: CIDR Block for the VPC
   Certificate:
     Type: String
-    Description: "SSL Certificate ARN"
     Default: ""
-  ContainerPort:
-    Type: Number
-    Description: Container port of application
-    Default: 5000
-  ClusterName:
-    Type: String
-    Description: Name for the ECS Cluster
+    Description: SSL Certificate ARN
   # DataDogAPIKey:
   #   Type: String
   #   Description: API Key of the DataDog Account
   #   Default: 183b3983fbe733ff45fcbc04afee25d6
-  DesiredCapacity:
-    Type: Number
-    Default: '1'
-    Description: Number of instances to launch in your ECS cluster.
-  DesiredCount:
-    Type: Number
-    Default: 0
-    Description: Desired count of containers to launch into the ECS cluster.
-  Environment:
-    Type: String
-    Default: development
-    AllowedValues:
-      - production
-      - cproduction
-      - staging
-      - development
-  InstanceType:
-    Description: EC2 instance type
-    Type: String
-    Default: t2.micro
-    AllowedValues: [t2.micro, t2.small, t2.medium, t2.large, m3.medium, m3.large,
-      m3.xlarge, m3.2xlarge, m4.large, m4.xlarge, m4.2xlarge, m4.4xlarge, m4.10xlarge,
-      c4.large, c4.xlarge, c4.2xlarge, c4.4xlarge, c4.8xlarge, c3.large, c3.xlarge,
-      c3.2xlarge, c3.4xlarge, c3.8xlarge, r3.large, r3.xlarge, r3.2xlarge, r3.4xlarge,
-      r3.8xlarge, i2.xlarge, i2.2xlarge, i2.4xlarge, i2.8xlarge]
-    ConstraintDescription: Please choose a valid instance type.
   KeyPair:
-    Type: "AWS::EC2::KeyPair::KeyName"
-    Description: "Public/private key pairs allow you to securely connect to your instance after it launches"
-  MaxSize:
-    Type: Number
-    Default: '1'
-    Description: Maximum number of instances that can be launched in your ECS cluster.
-  NumberOfAZs:
-    Default: 3
-    AllowedValues:
-      - 2
-      - 3
-    Description: "Number of Availability Zones to use in the VPC. This must match your selections in the list of Availability Zones parameter."
-    Type: String
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: ronaldo
+    Description: Public/private key pairs allow you to securely connect to your instance after it launches
   QSS3BucketName:
-    AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
-    Default: "hugo-orozco"
     Type: String
+    Default: l2-demo
+    AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
     ConstraintDescription: "Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
     Description: "S3 bucket name for the Quick Start assets. Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
   QSS3KeyPrefix:
-    AllowedPattern: "^[0-9a-zA-Z-/]*$"
-    Default: "ECS-Monitoring"
     Type: String
+    Default: L2-Demo
+    AllowedPattern: "^[0-9a-zA-Z-/]*$"
     ConstraintDescription: "Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/)."
     Description: "S3 key prefix for the Quick Start assets. Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/). It cannot start or end with a hyphen (-)."
-  ServiceName:
-    Description: Service Name
-    Type: String
-    Default: my-app
   StackName:
     Type: String
-    Default: demo
-    Description: "This name will be used to named the resources"
-  VPCCIDR:
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-    Default: 10.175.0.0/16
+    Default: L2-Demo
+    Description: This will be used to name the resources
+  Environment:
     Type: String
-    ConstraintDescription: "CIDR block parameter must be in the form x.x.x.x/16-28"
-    Description: "CIDR Block for the VPC"
-
+    Default: Dev
+    AllowedValues: [Prod, Stage, Dev]
 Resources: 
-  VPCStack:
+  VPC:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/network/vpc.yml"
       Parameters:
-        AvailabilityZones: !Join [",", !Ref AvailabilityZones]
-        NumberOfAZs: !Ref NumberOfAZs
+        AvailabilityZones: !Join [ ",", !GetAZs '']
         VPCCIDR: !Ref VPCCIDR
         StackName: !Ref StackName
         Environment: !Ref Environment
       Tags:
-        - Key: StackName
+        - Key: Environment
           Value: !Sub ${StackName}-${Environment}
-
   S3Bucket:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/datastore/s3.yml"
       Parameters:
-        Environment: !Ref Environment
-        ServiceName: "my-app"
         StackName: !Ref StackName
+        Environment: !Ref Environment
       Tags:
-        - Key: StackName
+        - Key: Environment
           Value: !Sub ${StackName}-${Environment}
-
-  ALBStack:
+  ALB:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/infrastructure/loadbalancer.yml"
+      TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/infrastructure/load-balancers.yml"
       Parameters:
-        LoadBalancerName: !Sub ${StackName}-loadbalancer-${Environment}
-        SubnetIds: !Join [ ",", [!GetAtt [VPCStack, Outputs.PublicSubnet1ID], !GetAtt [VPCStack, Outputs.PublicSubnet2ID]]]
-        VpcId: !GetAtt VPCStack.Outputs.VPCID
-        ContainerPort: !Ref ContainerPort
+        VpcId: !GetAtt VPC.Outputs.VPCID
+        SubnetsIds: !Join [ ",", [!GetAtt VPC.Outputs.PublicSubnet1ID, !GetAtt VPC.Outputs.PublicSubnet2ID]]
+        CertificateArn: !Ref Certificate
         S3BucketLogs: !GetAtt S3Bucket.Outputs.BucketName
-        Environment: !Ref Environment
         StackName: !Ref StackName
-        Certificate: !Ref Certificate
+        Environment: !Ref Environment
       Tags:
-        - Key: StackName
+        - Key: Environment
           Value: !Sub ${StackName}-${Environment}
-
-  
-  EcsStack:
-    DependsOn:
-      - VPCStack
+  ECS:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/infrastructure/ecs-cluster.yml"
       Parameters:
-        ALBSecurityGroup: !GetAtt ALBStack.Outputs.SecurityGroupId
-        ALBDNS: !GetAtt ALBStack.Outputs.LoadBalancerDomain
-        ClusterName: !Sub ${StackName}-${Environment}
+        VpcId: !GetAtt VPC.Outputs.VPCID
+        SubnetsIds: !Join [ ",", [!GetAtt VPC.Outputs.PrivateSubnet1AID, !GetAtt VPC.Outputs.PrivateSubnet2AID]]
+        ALBSecurityGroup: !GetAtt ALB.Outputs.SecurityGroupId
+        ALBDNS: !GetAtt ALB.Outputs.LoadBalancerDomain
+        ClusterName: L2-Demo-App
         # DataDogAPIKey: !Ref DataDogAPIKey
+        InstanceType: t2.small
+        # ECSAMI:
         DesiredCapacity: 1
         MinSize: 1
-        MinInstancesInService: 0
-        InstanceType: !Ref InstanceType
-        KeyPair: !Ref KeyPair
-        SubnetIds: !Join [ ",", [!GetAtt [VPCStack, Outputs.PrivateSubnet1AID], !GetAtt [VPCStack, Outputs.PrivateSubnet2AID]]]
-        VpcId: !GetAtt VPCStack.Outputs.VPCID
+        MaxSize: 3
+        MinInstancesInService: 1
+        MaxBatchSize: 2
+        PauseTime: PT5M
+        KeyPair: !Ref KeyPair        
         Environment: !Ref Environment
         StackName: !Ref StackName
       Tags:
-        - Key: StackName
+        - Key: Environment
           Value: !Sub ${StackName}-${Environment}
-  
-  MyApp:
     DependsOn:
-      - RedisStack
+      - VPC  
+  AppService:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/infrastructure/service.yml"
       Parameters:
-        ServiceName: "my-app" # This name must match the 'services' template file YAML
+        VpcId: !GetAtt VPC.Outputs.VPCID
+        Cluster: !GetAtt ECS.Outputs.Cluster
+        DesiredCount: 1
+        HttpListenerArn: !GetAtt ALB.Outputs.HttpListenerArn
+        HttpsListenerArn: "" #!GetAtt ALB.Outputs.HttpsListenerArn
+        RepositoryName: goapp
+        ImageTag: v9
+        ContainerPort: 8080
+        DBEndpoint: !GetAtt DB.Outputs.DBEndpoint
         Environment: !Ref Environment
-        DesiredCount: !Ref DesiredCount
         StackName: !Ref StackName
-        QSS3BucketName: !Ref QSS3BucketName
-        QSS3KeyPrefix: !Ref QSS3KeyPrefix
-        Cluster: !GetAtt EcsStack.Outputs.EcsCluster
-        ContainerPort: !Ref ContainerPort
-        MinimumHealthyPercent: 0
-        TargetGroupArn: !GetAtt ALBStack.Outputs.TargetGroupArn
-        RedisHost: !GetAtt RedisStack.Outputs.ElastiCacheCluster
-        # RedisHost: asdf
         # DataDogAPIKey: !Ref DataDogAPIKey
       Tags:
-        - Key: StackName
+        - Key: Environment
           Value: !Sub ${StackName}-${Environment}
-
-  DBStack:
+    DependsOn:
+      - DB
+  # Parameters /L2-Demo/DB_USER and /L2-Demo/DB_PASSWORD must exist on SSM
+  DB:
     Type: AWS::CloudFormation::Stack
     DeletionPolicy: Retain
     Properties:
       TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/datastore/database.yml"
       Parameters:
-        DBName: !Ref DBName
-        # DBUser: !Ref DBUser
-        # DBPassword: !Ref DBPassword
-        DBClass: !Ref DBClass
-        DBAllocatedStorage: !Ref DBAllocatedStorage
-        VPCId: !GetAtt VPCStack.Outputs.VPCID
-        VpcCidr: !GetAtt VPCStack.Outputs.VPCCIDR
-        SubnetIds: !Join [ ",", [!GetAtt [VPCStack, Outputs.PrivateSubnet1AID], !GetAtt [VPCStack, Outputs.PrivateSubnet2AID]]]
+        DBClass: db.t2.small
+        DBAllocatedStorage: 20
+        VPCId: !GetAtt VPC.Outputs.VPCID
+        SubnetIds: !Join [ ",", [!GetAtt VPC.Outputs.PrivateSubnet1AID, !GetAtt VPC.Outputs.PrivateSubnet2AID]]
         Environment: !Ref Environment
         StackName: !Ref StackName
-        EC2SecurityGroup: !GetAtt EcsStack.Outputs.SecurityGroup
+        EC2SecurityGroup: !GetAtt ECS.Outputs.SecurityGroup
       Tags:
-        - Key: StackName
+        - Key: Environment
           Value: !Sub ${StackName}-${Environment}
   
-  RedisStack:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/datastore/elasticache.yml"
-      Parameters:
-        VPCSubnets: !Join [ ",", [!GetAtt [VPCStack, Outputs.PrivateSubnet1AID], !GetAtt [VPCStack, Outputs.PrivateSubnet2AID]]]
-        VpcId: !GetAtt VPCStack.Outputs.VPCID
-        StackName: !Ref StackName
-        Environment: !Ref Environment
-        EC2SecurityGroup: !GetAtt EcsStack.Outputs.SecurityGroup
-      Tags:
-        - Key: StackName
-          Value: !Sub ${StackName}-${Environment}
+  # RedisStack:
+  #   Type: AWS::CloudFormation::Stack
+  #   Properties:
+  #     TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/datastore/elasticache.yml"
+  #     Parameters:
+  #       VPCSubnets: !Join [ ",", [!GetAtt [VPC, Outputs.PrivateSubnet1AID], !GetAtt [VPC, Outputs.PrivateSubnet2AID]]]
+  #       VpcId: !GetAtt VPC.Outputs.VPCID
+  #       StackName: !Ref StackName
+  #       Environment: !Ref Environment
+  #       EC2SecurityGroup: !GetAtt ECS.Outputs.SecurityGroup
+  #     Tags:
+  #       - Key: StackName
+  #         Value: !Sub ${StackName}-${Environment}
 
-  SSMStack:
+  # SSMStack:
+  #   Type: AWS::CloudFormation::Stack
+  #   DeletionPolicy: Retain
+  #   Properties:
+  #     TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/management/ssm.yml"
+  #     Parameters:
+  #       Environment: !Ref Environment
+  #       StackName: !Ref StackName
+  #     Tags:
+  #       - Key: StackName
+  #         Value: !Sub ${StackName}-${Environment}
+
+  Jenkins:
     Type: AWS::CloudFormation::Stack
-    DeletionPolicy: Retain
     Properties:
-      TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/management/ssm.yml"
+      TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/continuous-integration/master.yml"
       Parameters:
-        Environment: !Ref Environment
+        VpcId: !GetAtt VPC.Outputs.VPCID
+        PublicSubnetsIds: !Join [ ",", [!GetAtt [VPC, Outputs.PublicSubnet1ID], !GetAtt [VPC, Outputs.PublicSubnet2ID]]]
+        PrivateSubnetsIds: !Join [ ",", [!GetAtt [VPC, Outputs.PrivateSubnet1AID], !GetAtt [VPC, Outputs.PrivateSubnet2AID]]]
+        ClusterName: Jenkins
+        KeyPair: !Ref KeyPair
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}/continuous-integration
         StackName: !Ref StackName
+        Environment: Dev
       Tags:
         - Key: StackName
           Value: !Sub ${StackName}-${Environment}

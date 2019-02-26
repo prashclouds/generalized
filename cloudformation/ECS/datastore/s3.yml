@@ -1,25 +1,15 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "S3 bucket cloudformation stack"
-
-AWSTemplateFormatVersion: '2010-09-09'
-
+Description: >
+  S3 bucket cloudformation stack
 Parameters:
-  Environment:
-    Type: String
-    Description: "Environment platform, this parameter will be used to name the resources ."
-    Default: development
-    AllowedValues:
-      - production
-      - cproduction
-      - staging
-      - development
-  ServiceName:
-    Description: Service Name
-    Type: String
   StackName:
     Type: String
-    Description: "This name will be used to named the resources"
-
+    Default: demo
+    Description: This will be used to name the resources
+  Environment:
+    Type: String
+    Default: Dev
+    AllowedValues: [Prod, Stage, Dev]
 Mappings:
   Region2ARNPrefix:
     us-east-1:
@@ -81,7 +71,6 @@ Resources:
   S3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub ${ServiceName}-${Environment}-access-logs
       AccessControl: LogDeliveryWrite
       BucketEncryption:
         ServerSideEncryptionConfiguration:

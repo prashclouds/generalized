@@ -3,9 +3,8 @@
 -- DROP DATABASE books_database;
 
 CREATE DATABASE books_database
-  WITH OWNER = postgres
+    WITH OWNER = demo
        ENCODING = 'UTF8'
-       TABLESPACE = pg_default
        CONNECTION LIMIT = -1;
 
 \connect books_database 
@@ -25,6 +24,3 @@ CREATE TABLE books
 WITH (
  OIDS=FALSE
 );
-
-ALTER TABLE books
- OWNER TO postgres;
