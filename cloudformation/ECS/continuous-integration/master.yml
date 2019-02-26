@@ -83,9 +83,9 @@ Resources:
         Cluster: !GetAtt ECS.Outputs.Cluster
         DesiredCount: 1
         HttpListenerArn: !GetAtt ALB.Outputs.HttpListenerArn
-        # HttpsListenerArn: !GetAtt ALB.Outputs.HttpsListenerArn
+        HttpsListenerArn: "" #!GetAtt ALB.Outputs.HttpsListenerArn
         RepositoryName: jenkins
-        MasterTag: master5
+        MasterTag: master-v1
         SlaveTag: slave
         Environment: !Ref Environment
         StackName: !Ref StackName

@@ -14,20 +14,8 @@ Parameters:
     Type: String
   Environment:
     Type: String
-    Default: development
-    AllowedValues:
-      - production
-      - cproduction
-      - staging
-      - development
-  NumberOfAZs:
-    AllowedValues:
-      - 2
-      - 3
-      - 4
-    Default: 3
-    Description: "Number of Availability Zones to use in the VPC. This must match your selections in the list of Availability Zones parameter."
-    Type: String
+    Default: Dev
+    AllowedValues: [Prod, Stage, Dev]
   PrivateSubnetATag1:
     AllowedPattern: "^([a-zA-Z0-9+\\-._:/@]+=[a-zA-Z0-9+\\-.,_:/@ *\\\\\"'\\[\\]\\{\\}]*)?$"
     ConstraintDescription: "tags must be in format \"Key=Value\" keys can only contain [a-zA-Z0-9+\\-._:/@], values can contain [a-zA-Z0-9+\\-._:/@ *\\\\\"'\\[\\]\\{\\}]"
@@ -90,7 +78,6 @@ Conditions:
   PrivateSubnetATag2Condition: !Not [!Equals [!Ref PrivateSubnetATag2, ""]]
   PublicSubnetTag1Condition: !Not [!Equals [!Ref PublicSubnetTag1, ""]]
   PublicSubnetTag2Condition: !Not [!Equals [!Ref PublicSubnetTag2, ""]]
-
 Resources:
   DHCPOptions:
     Type: AWS::EC2::DHCPOptions

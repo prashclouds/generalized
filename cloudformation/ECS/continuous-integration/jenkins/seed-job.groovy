@@ -94,7 +94,7 @@ def scriptApproval = ScriptApproval.get()
 def approvalContext = ApprovalContext.create()
 
 def scriptsToApprove = [
-  'jobs/buildGoapp.groovy'
+  'jobs/L2Demo.groovy'
 ]
 
 def jenkins_home = Jenkins.getInstance().root

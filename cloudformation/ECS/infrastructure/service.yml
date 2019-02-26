@@ -2,93 +2,183 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: "ECS Services"
 
 Parameters:
-  Environment:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: The VPC Param for the Target Group
+  Cluster:
     Type: String
-    Description: "Environment platform, this parameter will be used to name the resources ."
-    Default: development
-    AllowedValues:
-      - production
-      - cproduction
-      - staging
-      - development
+    Description: The ECS Cluster Id for the service
   DesiredCount:
     Type: Number
-    Default: 0
-    Description: "Desired count of containers."
+    Default: 1
+    Description: Desided number of tasks that should be running on the cluster
+  HttpListenerArn:
+    Type: String
+    Description: ALB http listener to register the task
+  HttpsListenerArn:
+    Type: String
+    Default: ""
+    Description: ALB https listener to register the task
+  RepositoryName:
+    Type: String
+    Description: ECR repository name where the docker image is located
+  ImageTag:
+    Type: String
+    Description: Application image tag
+  ContainerPort:
+    Type: Number
+    Description: Container Port to map
+  DBEndpoint:
+    Type: String
+    Description: Database endpoint to pass as environment variable to the application
+  Environment:
+    Type: String
+    Default: Dev
+    AllowedValues: [Prod, Stage, Dev]
   StackName:
     Type: String
-    Description: "This name will be used to named the resources"
-  QSS3BucketName:
-    AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
-    Type: String
-    ConstraintDescription: "Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
-    Description: "S3 bucket name for the Quick Start assets. Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
-  Cluster:
-    Description: ECS Cluster name
-    Type: String
-  ContainerPort:
-    Description: Specific port where the service is listening.
-    Type: Number
-  DataDogAPIKey:
-    Type: AWS::SSM::Parameter::Value<String>
-    Description: API Key of the DataDog Account
-    Default: /ECS/ddApi
-  LoadBalancerHttpListenerArn:
-    Description: Load Balancer HTTP Listerner ARN
-    Type: String
-    Default: AWS::NoValue
-  LoadBalancerHttpsListenerArn:
-    Description: Load Balancer HTTPS Listerner ARN
-    Type: String
-    Default: AWS::NoValue
-  QSS3KeyPrefix:
-    AllowedPattern: "^[0-9a-zA-Z-/]*$"
-    Default: "ECS-Monitoring"
-    Type: String
-    ConstraintDescription: "Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/)."
-    Description: "S3 key prefix for the Quick Start assets. Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/). It cannot start or end with a hyphen (-)."
-  ServiceName:
-    Description: Service Name
-    Type: String
-  MinimumHealthyPercent:
-    Type: Number
-    Description: "Minimum Healthy Percent for ECS services"
-    Default: 0
-    MinValue: 0
-    MaxValue: 100
-  TargetGroupArn:
-    Type: String
-  RedisHost:
-    Type: String
-    Default: "asdf"
-
+    Description: Stack name to prefix some resource names
+Conditions:
+  HttpsEnabled: !Not [!Equals [!Ref HttpsListenerArn, ""]]
 Resources:
-  TaskDefinition:
-    Type: AWS::CloudFormation::Stack
+  ############## Roles ##############
+  ECSServiceRole:
+    Type: AWS::IAM::Role
     Properties:
-      TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/infrastructure/taskdefinition.yml"
-      TimeoutInMinutes: 60
-      Parameters:
-        ServiceName: !Ref ServiceName
-        StackName: !Ref StackName
-        Environment: !Ref Environment
-        ContainerPort: !Ref ContainerPort
-        RedisHost: !Ref RedisHost
-        DataDogAPIKey: !Ref DataDogAPIKey
-
-  Service:
-    DependsOn:
-      - TaskDefinition
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - Effect: Allow
+            Principal: 
+              Service: 
+                - ecs.amazonaws.com
+            Action: 
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole
+  ECSServiceAutoScalingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - Effect: Allow
+            Principal: 
+              Service: 
+                - application-autoscaling.amazonaws.com
+            Action: 
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceAutoscaleRole
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - Effect: Allow
+            Principal: 
+              Service: 
+                - ecs-tasks.amazonaws.com
+            Action: 
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+      Policies: 
+        - PolicyName: !Sub ${StackName}-${Environment}-GetSSMParameters
+          PolicyDocument: 
+            Version: "2012-10-17"
+            Statement: 
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameterHistory
+                  - ssm:GetParametersByPath
+                  - ssm:GetParameters
+                  - ssm:GetParameter
+                Resource: "*"
+  ############# Service #############
+  Service: 
     Type: AWS::ECS::Service
     Properties:
+      LaunchType: EC2
+      HealthCheckGracePeriodSeconds: 180
+      Role: !Ref ECSServiceRole
       Cluster: !Ref Cluster
       DesiredCount: !Ref DesiredCount
-      TaskDefinition: !GetAtt TaskDefinition.Outputs.TaskDefinition
+      TaskDefinition: !Ref TaskDefinition
       DeploymentConfiguration:
         MaximumPercent: 200
-        MinimumHealthyPercent: !Ref MinimumHealthyPercent
-      LoadBalancers:
-        - ContainerName: !Sub ${ServiceName}-${Environment}
-          TargetGroupArn: !Ref TargetGroupArn
+        MinimumHealthyPercent: 0
+      LoadBalancers: 
+        - ContainerName: !Sub ${RepositoryName}-${Environment}
           ContainerPort: !Ref ContainerPort
-      ServiceName: !Sub ${ServiceName}-${Environment}
+          TargetGroupArn: !Ref TargetGroup
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub ${RepositoryName}-${Environment}
+      TaskRoleArn: !Ref TaskRole
+      ContainerDefinitions:
+        - Name: !Sub ${RepositoryName}-${Environment}
+          Essential: true
+          Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${RepositoryName}:${ImageTag}
+          Environment:
+            - Name: AWS_ENV_PATH
+              Value: /L2-Demo/
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+            - Name: DB_HOST
+              Value: !Ref DBEndpoint
+          MemoryReservation: 256
+          PortMappings:
+            - ContainerPort: !Ref ContainerPort
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroup
+              awslogs-region: !Ref AWS::Region
+  ##### Service load balancing ######
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref VpcId
+      Port: !Ref ContainerPort
+      Protocol: HTTP
+      Matcher:
+        HttpCode: 200-299
+      HealthCheckIntervalSeconds: 10
+      HealthCheckPath: /check
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
+  HttpListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !Ref HttpListenerArn
+      Priority: 2
+      Conditions:
+        - Field: path-pattern
+          Values: 
+            - /*
+      Actions:
+        - TargetGroupArn: !Ref TargetGroup
+          Type: forward
+  HttpsListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Condition: HttpsEnabled
+    Properties:
+      ListenerArn: !Ref HttpsListenerArn
+      Priority: 2
+      Conditions:
+        - Field: path-pattern
+          Values: 
+            - /*
+      Actions:
+        - TargetGroupArn: !Ref TargetGroup
+          Type: forward
+  ########## CloudWatch Logs #########
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      RetentionInDays: 30

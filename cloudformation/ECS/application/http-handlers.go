@@ -155,3 +155,8 @@ func renderErrorPage(w http.ResponseWriter, errorMsg error) {
 	t := template.Must(template.New("errorPage").Parse(errorPage))
 	t.Execute(w, page)
 }
+
+func check(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Success"))
+}
