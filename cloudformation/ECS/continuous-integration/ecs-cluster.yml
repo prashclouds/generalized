@@ -10,48 +10,48 @@ Parameters:
     Type: List<AWS::EC2::Subnet::Id>
     Description: Subnet Ids to host the ECS AutoScaling Group instances
   ALBSecurityGroup:
-    Description: Load Balancer security group to allow inbound traffic
     Type: AWS::EC2::SecurityGroup::Id
+    Description: Load Balancer security group to allow inbound traffic
   ClusterName:
     Type: String
     Description: Name for the ECS Cluster
   InstanceType:
-    Description: EC2 instance type for the ASG
     Type: String
     Default: t2.micro
     AllowedValues: [t2.micro, t2.small, t2.medium, t2.large]
     ConstraintDescription: Please choose a valid instance type
+    Description: EC2 instance type for the ASG
   ECSAMI:
-    Description: AMI Id for the ECS AutoScaling Group
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-    Default: /aws/service/ecs/optimized-ami/amazon-linux/recommended/image_id
+    Default: /aws/service/ecs/optimized-ami/amazon-linux/recommended/image_id    
+    Description: AMI Id for the ECS AutoScaling Group    
   DesiredCapacity:
-    Description: Desired number of instances for AutoScaling Group
     Type: Number
     Default: 2
+    Description: Desired number of instances for AutoScaling Group
   MinSize:
-    Description: Minimun number of instances for AutoScaling Group
     Type: Number
     Default: 1
+    Description: Minimun number of instances for AutoScaling Group
   MaxSize:
-    Description: Maximun number of instances for AutoScaling Group
     Type: Number
     Default: 3
+    Description: Maximun number of instances for AutoScaling Group
   MinInstancesInService:
-    Description: Minimun number of instances running on AutoScaling Group updates
     Type: String
     Default: 1
+    Description: Minimun number of instances running on AutoScaling Group updates
   MaxBatchSize:
-    Description: Maximun number of instances to update at a time
     Type: String
     Default: 2
+    Description: Maximun number of instances to update at a time
   PauseTime:
-    Description: Amount of time to wait for instances to start on an ASG update
     Type: String
     Default: PT5M
+    Description: Amount of time to wait for instances to start on an ASG update
   KeyPair:
-    Description: Amazon EC2 Key Pair for the ASG launch configuration
     Type: AWS::EC2::KeyPair::KeyName
+    Description: Amazon EC2 Key Pair for the ASG launch configuration
   Environment:
     Type: String
     Default: Dev
@@ -67,12 +67,12 @@ Resources:
       AssumeRolePolicyDocument: 
         Version: "2012-10-17"
         Statement: 
-          - Effect: "Allow"
+          - Effect: Allow
             Principal: 
               Service: 
                 - ec2.amazonaws.com
             Action: 
-              - "sts:AssumeRole"
+              - sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
         - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
@@ -116,11 +116,11 @@ Resources:
         - Key: ECSCluster
           Value: !Sub ${ClusterName}
           PropagateAtLaunch: true
-        - Key: Environment
-          Value: !Sub ${StackName}-${Environment}
-          PropagateAtLaunch: true
         - Key: Patch Group
           Value: AMZ-Linux
+          PropagateAtLaunch: true
+        - Key: Environment
+          Value: !Sub ${StackName}-${Environment}
           PropagateAtLaunch: true
     CreationPolicy:
       ResourceSignal:
@@ -184,6 +184,7 @@ Resources:
                 echo "ECS_IMAGE_CLEANUP_INTERVAL=168h" >> /etc/ecs/ecs.config
                 echo "ECS_IMAGE_MINIMUM_CLEANUP_AGE=72h" >> /etc/ecs/ecs.config
                 echo "ECS_NUM_IMAGES_DELETE_PER_CYCLE=20" >> /etc/ecs/ecs.config
+                echo ECS_LOGLEVEL=info >> /etc/ecs/ecs.config
           files:
             "/etc/cfn/cfn-hup.conf":
               mode: 000400
@@ -207,7 +208,7 @@ Resources:
                 files:
                   - /etc/cfn/cfn-hup.conf
                   - /etc/cfn/hooks.d/cfn-auto-reloader.conf
-  ###### Auto Scaling Policies ####### 
+  ###### Auto Scaling Policies #######
   ScaleOutPolicy:
     Type: AWS::AutoScaling::ScalingPolicy
     Properties:

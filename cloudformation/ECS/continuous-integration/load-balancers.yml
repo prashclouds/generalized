@@ -12,8 +12,8 @@ Parameters:
     Description: Subnet Ids to host the Load Balancer
   CertificateArn:
     Type: String
-    Description: SSL Certificate ARN
     Default: ""
+    Description: SSL Certificate ARN
   Environment:
     Type: String
     Default: Dev
@@ -79,16 +79,16 @@ Resources:
       Port: 80
       Protocol: HTTP
       Tags:
-        - Key: Environment
-          Value: !Sub ${StackName}-${Environment}
         - Key: Name
           Value: DefaultTargetGroup
+        - Key: Environment
+          Value: !Sub ${StackName}-${Environment}
 Outputs:
   CanonicalHostedZoneID:
-    Description: "Canonical Hosted Zone ID"
+    Description: Canonical Hosted Zone ID
     Value: !GetAtt LoadBalancer.CanonicalHostedZoneID
   HttpListenerArn:
-    Description: "HTTP Listener ARN"
+    Description: HTTP Listener ARN
     Value: !Ref HttpListener
   # Conditioned if SSL Certificate is passed
   HttpsListenerArn:
