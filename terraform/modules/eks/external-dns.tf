@@ -30,7 +30,7 @@ POLICY
 
 resource "aws_iam_role_policy" "eks_dns_policy" {
   depends_on = ["aws_iam_role.eks_dns_role"]
-  name = "terraform-${var.environment}-${var.cluster-name}-eks_dns_policy"
+  name = "terraform_${var.environment}_${var.cluster_name}_eks_dns_policy"
   role = "${aws_iam_role.eks_dns_role.name}"
   policy = <<EOF
 {
@@ -66,33 +66,34 @@ EOF
 data "template_file" "external_dns_public" {
   template = "${file("${path.module}/templates/external-dns.yaml.tpl")}"
     vars {
-    cluster_name                      = "${aws_eks_cluster.k8s.name}-public"
-    domain_name                       = "${var.public_domain_name}"
-    dns_role                          = "${aws_iam_role.eks_dns_role.arn}"
-    zone_type                         = "public"
-    policy                            = "sync"
-    pod_name                          = "external-dns-public"
-    external_dns_version              = "${var.external_dns_version}"
+    cluster_name            = "${aws_eks_cluster.k8s.name}-public"
+    domain_name             = "${var.public_domain_name}"
+    dns_role                = "${aws_iam_role.eks_dns_role.arn}"
+    zone_type               = "public"
+    policy                  = "sync"
+    pod_name                = "external-dns-public"
+    external_dns_version    = "${var.external_dns_version}"
   }
 }
 resource "local_file" "external_dns_public" {
   content  = "${data.template_file.external_dns_public.rendered}"
-  filename = "${var.config_output_path}/external_dns_public_${aws_eks_cluster.eks-cluster.name}.yaml"
+  filename = "dist/external_dns_public_${aws_eks_cluster.k8s.name}.yaml"
 }
 
 data "template_file" "external_dns_private" {
   template = "${file("${path.module}/templates/external-dns.yaml.tpl")}"
     vars {
-    cluster_name                      = "${aws_eks_cluster.eks-cluster.name}-private"
-    domain_name                       = "${var.private_domain_name}"
-    dns_role                          = "${aws_iam_role.eks_dns_role.arn}"
-    zone_type                         = "private"
-    policy                            = "sync"
-    pod_name                          = "external-dns-private"
-    external_dns_version              = "${var.external_dns_version}"
+    cluster_name          = "${aws_eks_cluster.k8s.name}-private"
+    domain_name           = "${var.private_domain_name}"
+    dns_role              = "${aws_iam_role.eks_dns_role.arn}"
+    zone_type             = "private"
+    policy                = "sync"
+    pod_name              = "external-dns-private"
+    external_dns_version  = "${var.external_dns_version}"
   }
 }
 resource "local_file" "external_dns_private" {
+  count    = "${var.private_domain_name != "" ? 1 : 0}"
   content  = "${data.template_file.external_dns_private.rendered}"
-  filename = "${path.module}/dist/external_dns_private_${aws_eks_cluster.eks-cluster.name}.yaml"
+  filename = "dist/external_dns_private_${aws_eks_cluster.k8s.name}.yaml"
 }

@@ -63,6 +63,6 @@ data "template_file" "cluster_autoscaler" {
 }
 resource "local_file" "cluster_autoscaler" {
   content  = "${data.template_file.cluster_autoscaler.rendered}"
-  filename = "${path.module}/dist/cluster_autoscaler_${aws_eks_cluster.k8s.name}.yaml"
+  filename = "dist/cluster_autoscaler_${aws_eks_cluster.k8s.name}.yaml"
 }
 

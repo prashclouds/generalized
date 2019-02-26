@@ -23,6 +23,21 @@ variable "external_dns_version" {
   description = "version of external dns pod"
   default = "v0.5.11"
 }
+variable "kube2iam_version" {
+  type = "string"
+  description = "version of kube2iam daemon"
+  default = "0.10.4"
+}
+variable "private_domain_name" {
+  type = "string"
+  description = "Private domain for the services"
+  default = ""
+}
+variable "public_domain_name" {
+  type = "string"
+  description = "Public domain for the public services"
+  default = "nclouds.com"
+}
 variable "worker" {
   type    = "map"
   description = "Map of EKS workers settings"
