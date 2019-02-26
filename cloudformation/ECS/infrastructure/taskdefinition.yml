@@ -120,7 +120,7 @@ Resources:
             - DD-Agent
           PortMappings:
             - ContainerPort: !Ref ContainerPort
-          Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ServiceName}-${Environment}
+          Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ServiceName}:v1
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:

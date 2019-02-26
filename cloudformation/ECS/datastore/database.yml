@@ -1,18 +1,11 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "This template creates a Postgres RDS Instance"
+Description: >
+  Resources to create a Postgres RDS Instance
+  This parameters must exists befor creating the stack
+  /L2-Demo/DB_USER
+  /L2-Demo/DB_PASSWORD 
 
 Parameters:
-  DBName:
-    Description: DataBase Name
-    Type: String
-  # DBUser:
-  #   Description: DataBase User
-  #   Type: String
-  #   Default: 
-  # DBPassword:
-  #   Description: DataBase Password
-  #   Type: String
-  #   NoEcho: true
   DBClass:
     Description: DataBase Class
     Type: String
@@ -20,8 +13,6 @@ Parameters:
   DBAllocatedStorage:
     Description: The amount of storage (in GB) to allocate to the DB Instance.
     Type: Number
-  VpcCidr:
-    Type: String
   VPCId:
     Description: VPC Id
     Type: AWS::EC2::VPC::Id
@@ -29,16 +20,11 @@ Parameters:
     Type: CommaDelimitedList
   Environment:
     Type: String
-    Description: "Environment platform, this parameter will be used to name the resources ."
-    Default: development
-    AllowedValues:
-      - production
-      - cproduction
-      - staging
-      - development
+    Default: Dev
+    AllowedValues: [Prod, Stage, Dev]
   StackName:
     Type: String
-    Description: "This name will be used to named the resources"
+    Description: This name will be used to named the resources
   EC2SecurityGroup:
     Type: String
 
@@ -47,7 +33,7 @@ Resources:
     Type: AWS::KMS::Key
     Properties:
       KeyPolicy:
-        Version: 2012-10-17
+        Version: "2012-10-17"
         Id: key-default-1
         Statement:
           - Sid: Enable IAM User Permissions
@@ -91,15 +77,14 @@ Resources:
   DBInstance:
     Type: AWS::RDS::DBInstance
     Properties:
-      DBName: !Ref DBName
       Engine: postgres
       MultiAZ: true
-      MasterUsername: '{{resolve:ssm:/ECS/db/MasterUsername:1}}'
+      MasterUsername: '{{resolve:ssm:/L2-Demo/DB_USER:2}}'
       DBInstanceClass: !Ref DBClass
       DBSubnetGroupName: !Ref SubnetGroup
       DBInstanceIdentifier: !Sub ${StackName}-${Environment}
       AllocatedStorage: !Ref DBAllocatedStorage
-      MasterUserPassword: '{{resolve:ssm-secure:/ECS/db/MasterUserPassword:1}}'
+      MasterUserPassword: '{{resolve:ssm-secure:/L2-Demo/DB_PASSWORD:1}}'
       DeletionProtection: true
       PubliclyAccessible: false
       VPCSecurityGroups:

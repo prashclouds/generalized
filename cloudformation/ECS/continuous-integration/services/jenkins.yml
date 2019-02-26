@@ -6,30 +6,31 @@ Description: >
   Auto Scaling, including two CloudWatch alarms.
 Parameters:
   VpcId:
+    Type: AWS::EC2::VPC::Id
     Description: The VPC Param for the Target Group
-    Type: AWS::EC2::VPC::Id     
   Cluster:
-    Description: The ECS Cluster Id for the service
     Type: String
-  DesiredCount: 
-    Description: Desided number of tasks that should be running on the cluster
+    Description: The ECS Cluster Id for the service
+  DesiredCount:
     Type: Number
     Default: 1
+    Description: Desided number of tasks that should be running on the cluster
   HttpListenerArn:
+    Type: String
     Description: ALB http listener to register the task
+  HttpsListenerArn:
     Type: String
-  # HttpsListenerArn:
-  #   Description: ALB https listener to register the task
-  #   Type: String
+    Default: ""
+    Description: ALB https listener to register the task
   RepositoryName:
+    Type: String
     Description: ECR repository name where the Jenkins image is located
-    Type: String
   MasterTag:
-    Description: Jenkins master image tag
     Type: String
+    Description: Jenkins master image tag
   SlaveTag:
-    Description: Jenkins master image tag
     Type: String
+    Description: Jenkins master image tag
   Environment:
     Type: String
     Default: Dev
@@ -37,6 +38,8 @@ Parameters:
   StackName:
     Type: String
     Description: Stack name to prefix some resource names
+Conditions:
+  HttpsEnabled: !Not [!Equals [!Ref HttpsListenerArn, ""]]
 Resources:
   ############## Roles ##############
   ECSServiceRole:
@@ -132,9 +135,6 @@ Resources:
         - Name: docker-socket
           Host:
             SourcePath: "/var/run/docker.sock"
-        # - Name: persistent-jenkins-logs
-        #   Host:
-        #     SourcePath: "/var/jenkins_logs"
       ContainerDefinitions:
         - Name: !Sub JenkinsMaster-${Environment}
           Essential: true
@@ -152,9 +152,6 @@ Resources:
             - ContainerPath: "/var/run/docker.sock"
               SourceVolume: docker-socket
               ReadOnly: false
-            # - ContainerPath: "/var/jenkins_home/jobs"
-            #   SourceVolume: persistent-jenkins-logs
-            #   ReadOnly: false
           Memory: 2048
           PortMappings:
             - ContainerPort: 8080
@@ -176,7 +173,7 @@ Resources:
       Matcher:
         HttpCode: 200-299
       HealthCheckIntervalSeconds: 10
-      HealthCheckPath: /
+      HealthCheckPath: /login
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
@@ -193,18 +190,20 @@ Resources:
       Actions:
         - TargetGroupArn: !Ref TargetGroup
           Type: forward
-  # HttpsListenerRule:
-  #   Type: AWS::ElasticLoadBalancingV2::ListenerRule
-  #   Properties:
-  #     ListenerArn: !Ref HttpsListenerArn
-  #     Priority: 2
-  #     Conditions:
-  #       - Field: path-pattern
-  #         Values: 
-  #           - /*
-  #     Actions:
-  #       - TargetGroupArn: !Ref TargetGroup
-  #         Type: forward
+  # Conditioned if https is enabled
+  HttpsListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Condition: HttpsEnabled
+    Properties:
+      ListenerArn: !Ref HttpsListenerArn
+      Priority: 2
+      Conditions:
+        - Field: path-pattern
+          Values: 
+            - /*
+      Actions:
+        - TargetGroupArn: !Ref TargetGroup
+          Type: forward
   ########## CloudWatch Logs #########
   LogGroup:
     Type: AWS::Logs::LogGroup
