@@ -12,7 +12,7 @@ resource "aws_db_instance" "db" {
   username                  = "user",
   vpc_security_group_ids    = ["${var.db_security_groups_id}"]
   db_subnet_group_name      = "${var.db_subnet_group}"
-  final_snapshot_identifier = "${var.environment}-${var.cluster_name}-${uuid()}"
+  final_snapshot_identifier = "${var.environment}-${var.cluster_name}-test-${uuid()}"
 //  parameter_group_name      = "utf-8-encoding"
   lifecycle {
     ignore_changes = ["final_snapshot_identifier"] 
