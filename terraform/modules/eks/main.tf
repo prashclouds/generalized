@@ -3,6 +3,7 @@
 
 # create an IAM role that will be used by the K8s master
 data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
 resource "aws_iam_role" "eks_master_role" {
   name = "eks_master_role_k8s_${var.environment}_${var.cluster_name}"
   assume_role_policy = <<POLICY
@@ -91,5 +92,3 @@ resource "aws_eks_cluster" "k8s" {
     "aws_iam_role_policy_attachment.eks-ClusterPolicies",
   ]
 }
-
-data "aws_region" "current" {}

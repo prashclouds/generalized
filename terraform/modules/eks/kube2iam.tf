@@ -1,3 +1,4 @@
+# @read https://gist.github.com/snoby/77a49b6b79d0dd2ad9afbbf533588f54#setup-kube2iam-in-your-cluster
 data "template_file" "kube2iam" {
   template = "${file("${path.module}/templates/kube2iam.yaml.tpl")}"
     vars {
