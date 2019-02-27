@@ -16,7 +16,7 @@ variable "k8s_version" {
 }
 variable "autoscaler_version" {
   type = "string"
-  default= "1.3.7"
+  default= "v1.3.7"
 }
 variable "external_dns_version" {
   type = "string"

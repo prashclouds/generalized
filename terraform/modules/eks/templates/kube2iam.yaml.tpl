@@ -30,7 +30,7 @@ items:
 kind: List
 
 ---
-apiVersion: apps/v1
+apiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:
   name: kube2iam
@@ -38,9 +38,8 @@ metadata:
   labels:
     app: kube2iam
 spec:
-  selector:
-    matchLabels:
-      name: kube2iam
+  updateStrategy:
+    type: RollingUpdate
   template:
     metadata:
       labels:
@@ -57,8 +56,9 @@ spec:
             - "--base-role-arn=arn:aws:iam::${account_id}:role/"
             - "--iptables=true"
             - "--host-ip=$(HOST_IP)"
-            - "--host-interface=weave"
+            - "--host-interface=eni+"
             - "--verbose"
+            - "--debug"
           env:
             - name: HOST_IP
               valueFrom:

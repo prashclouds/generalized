@@ -20,13 +20,32 @@ resource "aws_iam_role" "eks_worker_role" {
 POLICY
 }
 
+# Kube2iam policy 
+resource "aws_iam_role_policy" "kube2iam-policy" {
+  depends_on = ["aws_iam_role.eks_worker_role"]
+  name = "terraform_eks_${aws_eks_cluster.k8s.name}_kube2iam_policy"
+  role = "${aws_iam_role.eks_worker_role.name}"
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "sts:AssumeRole"
+      ],
+      "Resource": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*"
+    }
+  ]
+}
+EOF
+}
 # lets start assigning worker node policies to the role
 resource "aws_iam_role_policy_attachment" "eks-WorkerPolicies" {
   count      = "${length(var.worker_node_policies)}"
   policy_arn = "arn:aws:iam::aws:policy/${var.worker_node_policies[count.index]}"
   role       = "${aws_iam_role.eks_worker_role.name}"
 }
-
 
 resource "aws_iam_instance_profile" "eks-worker-instance-profile" {
   name = "eks_instance_profile_${aws_eks_cluster.k8s.name}"
