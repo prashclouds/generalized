@@ -28,6 +28,11 @@ variable "kube2iam_version" {
   description = "version of kube2iam daemon"
   default = "0.10.4"
 }
+variable "dashboard_version" {
+  type = "string"
+  description = "version of the dashboard"
+  default = "v1.10.1"
+}
 variable "private_domain_name" {
   type = "string"
   description = "Private domain for the services"
@@ -36,7 +41,7 @@ variable "private_domain_name" {
 variable "public_domain_name" {
   type = "string"
   description = "Public domain for the public services"
-  default = "nclouds.com"
+  default = "shanux.com"
 }
 variable "worker" {
   type    = "map"

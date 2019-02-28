@@ -1,4 +1,5 @@
 ---
+# ------------------- ClusterAutoscaler ServiceAccount ------------------- #
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -8,6 +9,7 @@ metadata:
   name: cluster-autoscaler
   namespace: kube-system
 ---
+# ------------------- ClusterAutoscaler ClusterRole ------------------- #
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -49,6 +51,7 @@ rules:
   verbs: ["watch","list","get"]
 
 ---
+# ------------------- ClusterAutoscaler Role------------------- #
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -67,6 +70,7 @@ rules:
   verbs: ["delete","get","update"]
 
 ---
+# ------------------- ClusterAutoscaler RoleBinding ------------------- #
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -102,6 +106,7 @@ subjects:
     namespace: kube-system
 
 ---
+# ------------------- ClusterAutoscaler Deployment------------------- #
 apiVersion: apps/v1
 kind: Deployment
 metadata:

@@ -1,9 +1,11 @@
+# ------------------- ExternalDns ServiceAccount ------------------- #
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: ${pod_name}
   namespace: kube-system
 ---
+# ------------------- ExternalDns ClusterRole ------------------- #
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
@@ -22,6 +24,7 @@ rules:
   resources: ["nodes"]
   verbs: ["list"]
 ---
+# ------------------- ExternalDns ClusterRoleNinding ------------------- #
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
@@ -35,6 +38,7 @@ subjects:
   name: ${pod_name}
   namespace: kube-system
 ---
+# ------------------- ExternalDns Deployment ------------------- #
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:

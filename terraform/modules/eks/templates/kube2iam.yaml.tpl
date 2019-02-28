@@ -1,10 +1,12 @@
 ---
+# ------------------- Kube2iam ServiceAccount ------------------- #
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: kube2iam
   namespace: kube-system
 ---
+# ------------------- Kube2iam ClusterRole ------------------- #
 apiVersion: v1
 items:
   - apiVersion: rbac.authorization.k8s.io/v1
@@ -30,6 +32,7 @@ items:
 kind: List
 
 ---
+# ------------------- Kube2iam Daemonset ------------------- #
 apiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:

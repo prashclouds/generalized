@@ -77,7 +77,7 @@ data "template_file" "external_dns_public" {
 }
 resource "local_file" "external_dns_public" {
   content  = "${data.template_file.external_dns_public.rendered}"
-  filename = "dist/external_dns_public_${aws_eks_cluster.k8s.name}-${timestamp()}.yaml"
+  filename = "dist/external_dns_public_${aws_eks_cluster.k8s.name}-${uuid()}.yaml"
 }
 
 data "template_file" "external_dns_private" {
