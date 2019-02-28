@@ -108,7 +108,7 @@ Resources:
       TaskDefinition: !Ref TaskDefinition
       DeploymentConfiguration:
         MaximumPercent: 200
-        MinimumHealthyPercent: 0
+        MinimumHealthyPercent: 100
       LoadBalancers: 
         - ContainerName: !Sub ${RepositoryName}-${Environment}
           ContainerPort: !Ref ContainerPort

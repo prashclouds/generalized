@@ -76,6 +76,16 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
         - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+      Policies:
+        - PolicyName: !Sub ${StackName}-${Environment}-SlavePermission # Review this to use task role for slave
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+              - ecs:*
+              - ecr:*
+              Resource: '*'
   ECSInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:

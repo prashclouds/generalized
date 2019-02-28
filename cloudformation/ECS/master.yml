@@ -114,7 +114,7 @@ Resources:
         HttpListenerArn: !GetAtt ALB.Outputs.HttpListenerArn
         HttpsListenerArn: "" #!GetAtt ALB.Outputs.HttpsListenerArn
         RepositoryName: goapp
-        ImageTag: v9
+        ImageTag: latest
         ContainerPort: 8080
         DBEndpoint: !GetAtt DB.Outputs.DBEndpoint
         Environment: !Ref Environment
@@ -157,18 +157,19 @@ Resources:
   #       - Key: StackName
   #         Value: !Sub ${StackName}-${Environment}
 
-  # SSMStack:
-  #   Type: AWS::CloudFormation::Stack
-  #   DeletionPolicy: Retain
-  #   Properties:
-  #     TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/management/ssm.yml"
-  #     Parameters:
-  #       Environment: !Ref Environment
-  #       StackName: !Ref StackName
-  #     Tags:
-  #       - Key: StackName
-  #         Value: !Sub ${StackName}-${Environment}
-
+  SSM:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/management/ssm.yml"
+      Parameters:
+        ASGName: !GetAtt ECS.Outputs.AutoScalingGroupName
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
+        Environment: !Ref Environment
+        StackName: !Ref StackName
+      Tags:
+        - Key: StackName
+          Value: !Sub ${StackName}-${Environment}
   Jenkins:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -183,6 +184,19 @@ Resources:
         QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}/continuous-integration
         StackName: !Ref StackName
         Environment: Dev
+      Tags:
+        - Key: StackName
+          Value: !Sub ${StackName}-${Environment}
+  Clair:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${QSS3BucketName}/${QSS3KeyPrefix}/coreos-clair/clair-template.yml"
+      Parameters:
+        VpcId: !GetAtt VPC.Outputs.VPCID
+        PublicSubnets: !Join [ ",", [!GetAtt [VPC, Outputs.PublicSubnet1ID], !GetAtt [VPC, Outputs.PublicSubnet2ID]]]
+        PrivateSubnets: !Join [ ",", [!GetAtt [VPC, Outputs.PrivateSubnet1AID], !GetAtt [VPC, Outputs.PrivateSubnet2AID]]]
+        ECSClusterName: CoreOS-Clair
+        ECRRepositoryUri: 695292474035.dkr.ecr.us-west-2.amazonaws.com/coreos-clair:latest
       Tags:
         - Key: StackName
           Value: !Sub ${StackName}-${Environment}
