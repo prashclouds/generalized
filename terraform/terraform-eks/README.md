@@ -10,19 +10,6 @@
 
 Make sure that your backend configuration files are set properly, these files are located inside the config folder, make sure that the bucket and dynamo table exist, the dynamo table must have the string key `LockID`.
 
-```sh
-data "terraform_remote_state" "utility" {
-  backend = "s3"
-  config ={
-    bucket  = "unitq-terraform-development"
-    key     = "backend-utility.tfstate"
-    encrypt = true
-    region  = "us-east-1"
-    dynamodb_table = "terraform-lock"
-  }
-}
-```
-
 Modify your environment parameters on the tfvars file inside the config folder, make sure that your vpc CIDR does not overlaps between environments, add the name of your pem key to the worker map variable.
 
 ```sh
