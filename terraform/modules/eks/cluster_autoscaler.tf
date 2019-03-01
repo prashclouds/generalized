@@ -1,3 +1,4 @@
+# @see https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/
 resource "aws_iam_role" "eks-autoscaler-role" {
   name       = "terraform_${var.environment}_${var.cluster_name}_eks_autoscaler_role"
   depends_on = ["aws_iam_role.eks_worker_role"]
@@ -26,7 +27,7 @@ POLICY
 }
 #
 # Set cluster autoscaller necessary policies
-# @see https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/
+#
 resource "aws_iam_role_policy" "eks-autoscaler-policy" {
   depends_on = ["aws_iam_role.eks-autoscaler-role"]
   name       = "terraform_${var.environment}_${var.cluster_name}_eks_autoscaler_policy"

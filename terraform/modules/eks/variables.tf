@@ -5,7 +5,7 @@ variable "environment" {
 
 variable "cluster_name" {
   type    = "string"
-  default = "unitq"
+  default = "nclouds"
 }
 
 # see https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html for the ami for each aws-region
@@ -33,6 +33,11 @@ variable "dashboard_version" {
   description = "version of the dashboard"
   default = "v1.10.1"
 }
+variable "metrics_server_version" {
+  type = "string"
+  description = "variable of metrics server, needed for hpa"
+  default = "v0.3.1"
+}
 variable "private_domain_name" {
   type = "string"
   description = "Private domain for the services"
@@ -47,7 +52,7 @@ variable "worker" {
   type    = "map"
   description = "Map of EKS workers settings"
   default = {
-    instance-type = "t3.xlarge"
+    instance-type = "t3.large"
     desired-size  = "2"
     min-size      = "2"
     max-size      = "4"
