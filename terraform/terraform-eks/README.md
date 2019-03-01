@@ -4,8 +4,8 @@
 
 - Terraform v0.11.11
 - Pem key already created
-- To be able to deploy any environment first we will need to create the utility vpc, wich will have the openvpn server to be able to connect to the instances inside the private subnets.
-
+- S3 Bucket
+- Dynamo table with string key `LockID`
 ## Deploy your environment [dev,qa,prod]
 
 Make sure that your backend configuration files are set properly, these files are located inside the config folder, make sure that the bucket and dynamo table exist, the dynamo table must have the string key `LockID`.
