@@ -1,23 +1,23 @@
-environment   ="prod"
-cluster_name  ="junelife"
-region        ="us-west-2"
+environment   = "qa"
+cluster_name  = "nclouds"
+region        = "us-west-2"
 
-### VPC Module
+### VPC MODULE
 vpc= {
-    cidr          = "10.1.0.0/16",
+    cidr          = "10.2.0.0/16",
     dns_hostnames = true,
     dns_support   = true,
     tenancy       = "default",
   }
-public_subnets  = ["10.1.0.0/24","10.1.1.0/24"]
-private_subnets = ["10.1.2.0/24","10.1.3.0/24","10.1.4.0/24"]
-rds_subnets     = ["10.1.5.0/24","10.1.6.0/24"]
+public_subnets  = ["10.2.0.0/24","10.2.1.0/24"]
+private_subnets = ["10.2.2.0/24","10.2.3.0/24","10.2.4.0/24"]
+#rds_subnets     = ["10.2.5.0/24","10.2.6.0/24"]
 
 ### EKS MODULE
 worker= {
-  instance-type = "m4.2xlarge",
-  desired-size  = "4",
-  min-size      = "4",
-  max-size      = "8"
+  instance-type = "t3.xlarge",
+  desired-size  = "3",
+  min-size      = "2",
+  max-size      = "4"
   key_name      = "test"
 }

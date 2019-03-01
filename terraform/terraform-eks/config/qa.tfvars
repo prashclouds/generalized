@@ -1,5 +1,5 @@
 environment   = "qa"
-cluster_name  = "junelife"
+cluster_name  = "nclouds"
 region        = "us-west-2"
 
 ### VPC MODULE
@@ -15,7 +15,7 @@ private_subnets = ["10.2.2.0/24","10.2.3.0/24","10.2.4.0/24"]
 
 ### EKS MODULE
 worker= {
-  instance-type = "t3.xlarge",
+  instance-type = "t3.large",
   desired-size  = "3",
   min-size      = "2",
   max-size      = "4"
