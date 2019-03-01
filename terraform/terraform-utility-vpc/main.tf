@@ -1,5 +1,5 @@
 module "vpc" {
-  source          = "../modules/vpc"
+  source          = "vpc"
   environment     = "${var.environment}"
   vpc             = "${var.vpc}"
   cluster_name    = "${var.cluster_name}"
